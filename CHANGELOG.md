@@ -9,7 +9,9 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado]
+## [06/11/2026] — Versão v3 no ar (código organizado + correção da barra)
+
+> Publicada em Produção no Cloudflare (`finance-site-v3.zip`), depois de testada na versão prévia `teste.finance-renan.pages.dev`. Conferido no celular: login, dados e barra legível.
 
 ### Corrigido
 - **Barra "Projeção negativa" sem texto** (tela Início, embaixo do saldo): o texto tinha a mesma cor rosa do fundo e ficava invisível (duas regras de cor disputavam; a errada ganhava). Agora a barra negativa tem fundo rosa clarinho e texto rosa forte, como os outros avisos do app — contraste 6,8 no modo escuro e 4,6 no claro (mínimo recomendado: 4,5). A barra azul "Vai sobrar" não mudou.

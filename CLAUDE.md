@@ -44,7 +44,7 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 - Se, no meio do trabalho, surgir algo fora do plano aprovado, **pare e avise** antes de fazer.
 
 ### A4. Depois de cada alteração
-1. Registre no **`CHANGELOG.md`** (seção "Não publicado" até ir para o `main`), em linguagem simples.
+1. Registre no **`CHANGELOG.md`** (seção "Não publicado" até ir para o ar no Cloudflare), em linguagem simples.
 2. Explique o que foi feito, como testar e o próximo passo.
 3. Faça o commit com mensagem clara em português e envie para o branch de trabalho.
 
@@ -122,6 +122,6 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - Trabalhar sempre em branch separado (ex.: `claude/...`). Mensagens de commit em português, descrevendo o que e por quê.
 - **Publicar (hoje):** gerar o `.zip` **do site** — só os arquivos do app, sem `docs/`, `tests/` e `.md`:
   `git archive --format=zip -o finance-site.zip HEAD index.html config.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png css js`
-  Enviar ao Renan e guiá-lo no Cloudflare: **Workers & Pages** → `finance-renan` → **Create deployment** → tocar no link "arquivo" (no iPhone, a área de arrastar não funciona) → **Implantar site**.
+  Enviar ao Renan e guiá-lo no Cloudflare: **Workers & Pages** → `finance-renan` → **Create deployment** → menu **"···"** (no celular o botão fica escondido) → escolher **Versão prévia** (nome `teste` → `teste.finance-renan.pages.dev`) para testar primeiro → tocar no link "arquivo" (no iPhone, a área de arrastar não funciona) → **Salvar e implantar**. Depois de testado, repetir com **Produção**.
 - Depois de publicar, pedir ao Renan para testar no celular (login + dados aparecendo).
 - Se o GitHub voltar: decidir com o Renan se conecta o Cloudflare ao repositório (publicação automática) ou mantém o envio manual.
