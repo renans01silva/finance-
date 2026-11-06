@@ -9,6 +9,16 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
+## [Não publicado]
+
+### Adicionado
+- **Testes automáticos** (`tests/`): 29 provas que conferem sozinhas os cálculos do motor financeiro — dinheiro em centavos, datas, faturas e parcelamento, saldos, regras de segurança, contas recorrentes, migração de dados antigos e duplicidade. Resultado: **29 de 29 passando**, nenhum erro de cálculo encontrado.
+- Conferido que os testes realmente pegam erros: estragando de propósito a divisão de parcelas (numa cópia), 2 testes falharam na hora.
+
+> O app não mudou; não é preciso reenviar ao Cloudflare.
+
+---
+
 ## [06/11/2026] — App movido para o Cloudflare Pages
 
 ### Alterado

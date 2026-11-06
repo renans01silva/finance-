@@ -76,6 +76,7 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 | `manifest.webmanifest` | Dados da PWA (nome, ícones, cores) |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Ícones |
 | `docs/` | Documentação (glossário, Supabase) |
+| `tests/` | Testes automáticos do motor financeiro (não fazem parte do app) |
 | `CHANGELOG.md` | Diário de alterações |
 
 ### B4. Mapa do `index.html` (procure pelos comentários; números de linha mudam)
@@ -103,7 +104,11 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- Não há testes automáticos ainda. Para conferir mudanças: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** de publicar.
+- **Testes automáticos do motor financeiro** (29 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
+  - `tests/carregar-motor.js` lê o `index.html` e extrai só o bloco "motor financeiro" (por isso esse comentário no `<script>` não pode ser removido).
+  - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
+  - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.
+- Para conferir as telas: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** de publicar.
 - Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console.
 
 ### B8. Git e publicação

@@ -19,6 +19,8 @@
 - **Migração** — conversão automática dos dados antigos quando a estrutura deles muda, para nada se perder.
 - **Centavos inteiros** — o app guarda R$ 10,50 como `1050`, evitando erros de arredondamento.
 - **Design tokens** — "catálogo" de cores e estilos com nome (ex.: `--pri` = cor principal).
+- **Teste automático** — "lista de checagem" que o computador roda sozinho para conferir se o código continua dando os resultados certos.
+- **Node (Node.js)** — programa que roda JavaScript fora do navegador; usado aqui para rodar os testes.
 - **Console** — painel escondido do navegador onde aparecem mensagens de erro do código.
 
 ## Git e GitHub

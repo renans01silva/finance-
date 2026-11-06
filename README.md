@@ -33,6 +33,10 @@ Os dados ficam no aparelho e são sincronizados com o Supabase, com login por e-
 - [`docs/SUPABASE.md`](docs/SUPABASE.md): banco de dados e segurança.
 - [`docs/GLOSSARIO.md`](docs/GLOSSARIO.md): termos técnicos explicados.
 
+## Testes automáticos
+29 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração).
+Para rodar, na pasta do projeto: `node --test tests/motor.test.js`
+
 ## Publicação
 O app está hospedado no **Cloudflare Pages** (projeto `finance-renan`).
 Para publicar uma nova versão: gerar um `.zip` com os arquivos do projeto e enviá-lo no painel do Cloudflare
