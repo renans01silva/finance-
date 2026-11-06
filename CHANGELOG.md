@@ -17,6 +17,8 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 - O código do app **não mudou**: é a mesma versão de antes. Os dados continuam no Supabase e voltaram normalmente ao fazer login.
 - Documentação (`README.md`, `CLAUDE.md`, `docs/SUPABASE.md`) atualizada com o endereço novo e o jeito novo de publicar (envio de `.zip`).
 
+- Supabase: **Site URL** trocado de `http://localhost:3000` (padrão) para `https://finance-renan.pages.dev`, para os links de e-mail (confirmação de conta, recuperação de senha) abrirem o app.
+
 ### Adicionado
 - `docs/GLOSSARIO.md`: termos novos (Cloudflare Pages, deploy, .zip, 404, domínio).
 
