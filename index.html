@@ -123,6 +123,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
 .cmp{width:100%;border-collapse:collapse;font-size:13.5px}.cmp th{font-weight:800;color:var(--mut);text-align:right;padding:12px 14px 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em}.cmp th:first-child,.cmp td:first-child{text-align:left}
 .cmp td{padding:11px 14px;border-top:1px solid var(--line);text-align:right;font-weight:700;white-space:nowrap}.cmp td:first-child{color:var(--mut);font-weight:600;white-space:normal}
 .cmp tr.tot td{background:var(--soft);font-weight:800;color:var(--tx)}.cmp tr.tot td:first-child{color:var(--tx)}
+@media(max-width:480px){.cmp{table-layout:fixed;font-size:12px}.cmp th{padding:12px 4px 8px;font-size:10.5px;letter-spacing:.02em}.cmp td{padding:10px 4px}.cmp th:first-child,.cmp td:first-child{width:25%;padding-left:12px}.cmp th:last-child,.cmp td:last-child{padding-right:12px}}
 .phead{padding:18px 18px 4px}.phead h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.3px}.phead .lead{margin-top:2px}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 18px}.mini div{background:var(--seg);border-radius:16px;padding:12px 14px}.mini small{display:block;color:var(--mut);font-size:12px;font-weight:700}.mini b{font-size:17px;font-weight:800;letter-spacing:-.4px}
 .sub{font-size:12px;font-weight:800;color:var(--mut);padding:12px 18px 2px;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between}
@@ -258,7 +259,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
   // ───── estado
   E.newState = () => ({
     schema: 2, profile: { name: 'Renan', mode: 'dark', palette: 'azul' },
-    settings: { payDays: [10, 25] }, invoiceFund: {}, purchases: [],
+    settings: { payDays: [10, 25] }, invoiceFund: {}, purchases: [], plan: { income: [0, 0], items: [], done: {} },
     accounts: [], cards: [], categories: defaultCategories(), tx: [], budgets: {}, recurrences: [], log: [],
   });
   function defaultCategories() {
@@ -332,11 +333,13 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
         if (n > 1) { Object.assign(t, { installmentGroup: group, installmentNo: i + 1, installmentTotal: n, desc: `${t.desc} (${i + 1}/${n})`, originalDate: o.date || E.today() }); }
         s.tx.push(t); hist(t, 'criada'); out.push(t);
       });
+      if (o.planItemId) out.forEach((t) => { t.planItemId = o.planItemId; });
       return out;
     }
     if (!o.accountId) throw new Error('Escolha a conta de onde sai o dinheiro.');
     const t = Object.assign(base(s, o), { kind: 'expense', amountCents: o.amountCents, accountId: o.accountId, method: o.method || 'pix', dueDate: o.dueDate || o.date || E.today() });
     if (o.fund) { checkPk(o.fund); t.fund = o.fund; }
+    if (o.planItemId) t.planItemId = o.planItemId;
     if (o.paid) { t.status = 'paid'; t.paidDate = o.paidDate || E.today(); t.paidCents = o.amountCents; }
     s.tx.push(t); hist(t, 'criada'); return [t];
   };
@@ -363,8 +366,8 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     const t = s.tx.find((x) => x.id === id);
     if (!t) throw new Error('Lançamento não encontrado.');
     if (patch.fund) checkPk(patch.fund);
-    const L = { desc: 'descrição', amountCents: 'valor', categoryId: 'categoria', dueDate: 'vencimento', paidDate: 'data do pagamento', fund: 'recebimento vinculado', slot: 'período da receita' };
-    const show = (k, v) => k === 'amountCents' ? E.brl(v) : (k === 'dueDate' || k === 'paidDate') ? E.fmtDate(v) : k === 'fund' ? (v ? E.fundLabel(s, v) : 'sem vínculo') : k === 'slot' ? (v ? 'dia ' + E.cfg(s).payDays[v - 1] : 'automático') : String(v == null ? '—' : v).replace(/^[ei]_/, '');
+    const L = { desc: 'descrição', amountCents: 'valor', categoryId: 'categoria', dueDate: 'vencimento', paidDate: 'data do pagamento', fund: 'recebimento vinculado', slot: 'período da receita', planItemId: 'item do orçamento' };
+    const show = (k, v) => k === 'amountCents' ? E.brl(v) : (k === 'dueDate' || k === 'paidDate') ? E.fmtDate(v) : k === 'fund' ? (v ? E.fundLabel(s, v) : 'sem vínculo') : k === 'planItemId' ? (((s.plan || { items: [] }).items.find((i) => i.id === v) || {}).name || 'nenhum') : k === 'slot' ? (v ? 'dia ' + E.cfg(s).payDays[v - 1] : 'automático') : String(v == null ? '—' : v).replace(/^[ei]_/, '');
     Object.keys(patch).forEach((k) => { if ((t[k] || null) !== (patch[k] || null) || (k !== 'fund' && k !== 'slot' && t[k] !== patch[k])) { if (L[k]) hist(t, `${L[k]}: ${show(k, t[k])} → ${show(k, patch[k])}`); if ((k === 'fund' || k === 'slot') && !patch[k]) delete t[k]; else t[k] = patch[k]; } });
     return t;
   };
@@ -569,7 +572,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     if (to > 0 && tc > to && E.diffDays(mo + '-01', today) >= 15) out.push({ level: 'info', text: `Você gastou ${E.brl(tc - to)} a mais que em todo o mês passado.` });
     const proj = E.projection(s, 30, ctx, today).find((p) => p.balanceCents < 0);
     if (proj) out.push({ level: 'bad', text: `Atenção: sua projeção indica saldo negativo em ${E.fmtDate(proj.date)}.` });
-    return out.concat(E.periodInsights(s, ctx, today));
+    return out.concat(E.planInsights(s, ctx, today), E.periodInsights(s, ctx, today));
   };
 
 
@@ -691,6 +694,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     if (!s.settings) { s.settings = { payDays: DEFAULT_PAYDAYS.slice() }; ch = true; }
     if (!s.invoiceFund) { s.invoiceFund = {}; ch = true; }
     if (!s.purchases) { s.purchases = []; ch = true; }
+    if (!s.plan) { s.plan = { income: [0, 0], items: [], done: {} }; ch = true; }
     const groups = {};
     s.tx.forEach((t) => {
       if (t.kind !== 'expense' || !t.cardId || t.purchaseId) return;
@@ -886,6 +890,121 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     return rows.sort((a, b) => b.competence.localeCompare(a.competence) || b.date.localeCompare(a.date) || a.no - b.no);
   };
 
+
+  // ───── 3) Orçamento por recebimento (plano de cada período)
+  // s.plan = { income:[previsto dia A, previsto dia B], items:[{id,slot,name,kind,amountCents,dueDay,categoryId,active}], done:{'pk|itemId':true} }
+  E.PLAN_KINDS = { fixed: 'Conta fixa', variable: 'Orçamento variável', reserve: 'Reserva de caixa', invest: 'Investimento', saving: 'Poupança' };
+  const isAlloc = (k) => k === 'reserve' || k === 'invest' || k === 'saving';
+  const nrm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const planOf = (s) => { if (!s.plan) s.plan = { income: [0, 0], items: [], done: {} }; return s.plan; };
+  E.planItems = (s, slot) => planOf(s).items.filter((i) => i.active !== false && (!slot || i.slot === slot));
+  E.planAdd = (s, o) => {
+    needAmount(o.amountCents);
+    if (!(o.slot === 1 || o.slot === 2)) throw new Error('Escolha o recebimento (dia ' + E.cfg(s).payDays[0] + ' ou ' + E.cfg(s).payDays[1] + ').');
+    if (!E.PLAN_KINDS[o.kind]) throw new Error('Escolha o tipo do item.');
+    if (!o.name || !o.name.trim()) throw new Error('Dê um nome para o item.');
+    if (o.kind === 'fixed' && o.dueDay != null && o.dueDay !== '' && !(o.dueDay >= 1 && o.dueDay <= 31)) throw new Error('O dia do vencimento deve estar entre 1 e 31.');
+    const it = { id: E.uid(), slot: o.slot, name: o.name.trim(), kind: o.kind, amountCents: o.amountCents, dueDay: o.kind === 'fixed' && o.dueDay ? +o.dueDay : null, categoryId: o.categoryId || null, active: true };
+    planOf(s).items.push(it); return it;
+  };
+  E.planEdit = (s, id, patch) => {
+    const it = planOf(s).items.find((x) => x.id === id); if (!it) throw new Error('Item não encontrado.');
+    if (patch.amountCents != null) needAmount(patch.amountCents);
+    if (patch.name != null && !patch.name.trim()) throw new Error('Dê um nome para o item.');
+    ['name', 'kind', 'amountCents', 'slot', 'dueDay', 'categoryId', 'active'].forEach((k) => { if (patch[k] !== undefined) it[k] = k === 'name' ? patch[k].trim() : patch[k]; });
+    if (it.kind !== 'fixed') it.dueDay = null;
+    return it;
+  };
+  // tirar do plano nunca apaga lançamentos: o item só fica inativo (os gastos continuam existindo)
+  E.planRemove = (s, id) => E.planEdit(s, id, { active: false });
+  E.planSetIncome = (s, slot, cents) => { if (!(cents >= 0)) throw new Error('Informe um valor válido.'); planOf(s).income[slot - 1] = cents; };
+  E.planSetDone = (s, pk, id, v) => { const d = planOf(s).done; if (v) d[pk + '|' + id] = true; else delete d[pk + '|' + id]; };
+  E.planTemplate = () => {
+    const f = (slot, name, cents, dueDay, cat) => ({ slot, name, kind: 'fixed', amountCents: cents, dueDay, categoryId: cat });
+    const v = (slot, name, cents, cat) => ({ slot, name, kind: 'variable', amountCents: cents, dueDay: null, categoryId: cat });
+    const a = (slot, name, kind, cents) => ({ slot, name, kind, amountCents: cents, dueDay: null, categoryId: null });
+    return { income: [378792, 267643], items: [
+      f(1, 'Aluguel', 150000, 10, 'e_Moradia'), f(1, 'AABB Tênis', 7000, 10, 'e_Lazer'), f(1, 'Jiu-jítsu', 18000, 10, 'e_Saúde'), f(1, 'Inglês', 21586, 10, 'e_Educação'),
+      f(1, 'Carro', 22500, 10, 'e_Veículos'), f(1, 'Internet', 10000, 15, 'e_Moradia'), f(1, 'Dízimo', 5000, 15, 'e_Outros'), f(1, 'Conta de luz', 30000, 23, 'e_Moradia'), f(1, 'Funcional', 17550, 25, 'e_Saúde'),
+      v(1, 'Gasolina', 20000, 'e_Transporte'), v(1, 'Mercado', 25000, 'e_Alimentação'), v(1, 'Farmácia', 10000, 'e_Saúde'), v(1, 'Lazer', 15000, 'e_Lazer'), v(1, 'Cabelo', 12500, 'e_Outros'), v(1, 'Terapia', 10000, 'e_Saúde'),
+      f(2, 'Telefone', 17823, 26, 'e_Moradia'), f(2, 'Água', 12000, 28, 'e_Moradia'), a(2, 'Reserva para os dias 1 a 9 do mês seguinte', 'reserve', 50000),
+      v(2, 'Gasolina', 20000, 'e_Transporte'), v(2, 'Mercado', 25000, 'e_Alimentação'), v(2, 'Farmácia', 10000, 'e_Saúde'), v(2, 'Lazer', 15000, 'e_Lazer'),
+      v(2, 'Manutenção do carro', 11676, 'e_Veículos'), v(2, 'Seguro', 26700, 'e_Veículos'), a(2, 'FII', 'invest', 21000), a(2, 'Reserva financeira', 'saving', 63900) ] };
+  };
+  // importa um modelo (ex.: a planilha do usuário). Só em plano vazio, para nunca duplicar nem sobrescrever.
+  E.planImport = (s, tpl) => {
+    const pl = planOf(s); if (pl.items.some((i) => i.active !== false)) throw new Error('Seu orçamento já tem itens. Importe só em um orçamento vazio.');
+    pl.income = tpl.income.slice(); tpl.items.forEach((i) => E.planAdd(s, i)); return pl.items.length;
+  };
+  // quando uma despesa pertence a um período do orçamento
+  const planDate = (t) => t.cardId ? t.purchaseDate : t.status === 'paid' ? t.paidDate : t.dueDate;
+  const inPlanPeriod = (t, pk, range) => t.fund ? t.fund === pk : (planDate(t) >= range.start && planDate(t) <= range.end);
+  // regras de associação (nesta ordem): 1) item escolhido no lançamento; 2) nome do item na descrição; 3) categoria, se for única entre os orçamentos variáveis do período
+  E.planMatch = (s, pk, ctx = 'all') => {
+    const q = E.parsePk(pk), range = E.periodRange(s, pk), items = E.planItems(s, q.slot).filter((i) => !isAlloc(i.kind));
+    const txs = live(s, ctx).filter((t) => t.kind === 'expense' && inPlanPeriod(t, pk, range));
+    const owner = {}, byName = items.slice().sort((a, b) => b.name.length - a.name.length);
+    const varCat = {}; items.filter((i) => i.kind === 'variable' && i.categoryId).forEach((i) => { varCat[i.categoryId] = (varCat[i.categoryId] || []).concat(i); });
+    txs.forEach((t) => {
+      let it = t.planItemId && items.find((i) => i.id === t.planItemId);
+      if (!it) { const d = nrm(t.desc); it = byName.find((i) => nrm(i.name).length >= 3 && d.includes(nrm(i.name))); }
+      if (!it && t.categoryId && varCat[t.categoryId] && varCat[t.categoryId].length === 1) it = varCat[t.categoryId][0];
+      if (it) owner[t.id] = it.id;
+    });
+    return { txs, owner };
+  };
+  E.planPeriod = (s, pk, ctx = 'all') => {
+    const q = E.parsePk(pk), pl = planOf(s), range = E.periodRange(s, pk), { txs, owner } = E.planMatch(s, pk, ctx);
+    const val = (t) => t.status === 'paid' && !t.cardId ? (t.paidCents || t.amountCents) : t.amountCents;
+    const isPaid = (t) => t.cardId || t.status === 'paid';
+    const rows = E.planItems(s, q.slot).map((it) => {
+      const mine = txs.filter((t) => owner[t.id] === it.id);
+      const paid = mine.filter(isPaid).reduce((a, t) => a + val(t), 0), pending = mine.filter((t) => !isPaid(t)).reduce((a, t) => a + t.amountCents, 0);
+      let status, committed, done = !!pl.done[pk + '|' + it.id];
+      if (isAlloc(it.kind)) { status = done ? 'done' : 'todo'; committed = it.amountCents; }
+      else if (it.kind === 'fixed') { status = pending > 0 ? 'pending' : paid > 0 ? 'paid' : 'none'; committed = paid + pending > 0 ? paid + pending : it.amountCents; }
+      else { const u = paid + pending; status = u > it.amountCents ? 'over' : u >= it.amountCents * 0.85 ? 'near' : 'ok'; committed = Math.max(it.amountCents, u); }
+      return { item: it, plannedCents: it.amountCents, paidCents: paid, pendingCents: pending, usedCents: paid + pending, committedCents: committed, status, done, txIds: mine.map((t) => t.id) };
+    });
+    const sum = (f, k) => rows.filter(f).reduce((a, r) => a + r[k], 0), kindIs = (k) => (r) => r.item.kind === k;
+    const off = txs.filter((t) => !owner[t.id]), offCents = off.reduce((a, t) => a + (isPaid(t) ? val(t) : t.amountCents), 0);
+    const sm = E.periodSummary(s, pk, ctx), incomePlanned = pl.income[q.slot - 1] || 0, incomeBase = incomePlanned || sm.expectedCents;
+    const plannedTotal = sum(() => true, 'plannedCents'), committedTotal = sum(() => true, 'committedCents');
+    return {
+      pk, range, rows, off, offCents, incomePlanned, incomeRegistered: sm.expectedCents, incomeBase,
+      fixedCents: sum(kindIs('fixed'), 'plannedCents'), variableCents: sum(kindIs('variable'), 'plannedCents'), allocCents: sum((r) => isAlloc(r.item.kind), 'plannedCents'),
+      plannedTotal, committedTotal, paidTotal: sum((r) => !isAlloc(r.item.kind), 'paidCents'),
+      balanceCents: incomeBase - plannedTotal,                         // sobra do plano, como na planilha
+      realBalanceCents: incomeBase - committedTotal - offCents,         // sobra considerando o que já aconteceu e gastos fora do plano
+    };
+  };
+  E.planInsights = (s, ctx, today = E.today()) => {
+    const out = [], pl = planOf(s); if (!pl.items.some((i) => i.active !== false)) return out;
+    const np = E.nextPayday(s, today), cur = E.slotOfDate(s, today), curPk = E.pk(E.ym(today), cur);
+    [curPk, np.pk].filter((x, i, a) => a.indexOf(x) === i).forEach((pk) => {
+      const P = E.planPeriod(s, pk, ctx), dia = E.cfg(s).payDays[E.parsePk(pk).slot - 1];
+      if (P.balanceCents < 0) out.push({ level: 'warn', text: `O orçamento do dia ${dia} passa do rendimento em ${E.brl(-P.balanceCents)}.` });
+      P.rows.filter((r) => r.status === 'over').forEach((r) => out.push({ level: 'bad', text: `${r.item.name} passou do orçado: ${E.brl(r.usedCents)} de ${E.brl(r.plannedCents)}.` }));
+    });
+    return out;
+  };
+  // lança as contas fixas do orçamento como "a pagar", ligadas ao recebimento do plano. Nunca duplica.
+  E.planGenerate = (s, ym, { accountId, context = 'personal' } = {}) => {
+    if (!accountId) throw new Error('Escolha a conta de onde essas contas saem.');
+    const made = [], skipped = [];
+    [1, 2].forEach((slot) => {
+      const pk = E.pk(ym, slot), startD = E.paydayDate(s, pk);
+      E.planItems(s, slot).filter((i) => i.kind === 'fixed' && i.dueDay).forEach((i) => {
+        let due = ym + '-' + pad(Math.min(i.dueDay, E.daysInMonth(+ym.slice(0, 4), +ym.slice(5, 7))));
+        if (due < startD) { const n = E.addMonths(ym + '-01', 1); due = n.slice(0, 7) + '-' + pad(Math.min(i.dueDay, E.daysInMonth(+n.slice(0, 4), +n.slice(5, 7)))); }
+        if (s.tx.some((t) => t.planItemId === i.id && t.dueDate === due && t.kind === 'expense')) { skipped.push(i.name); return; }
+        const [t] = E.addExpense(s, { desc: i.name, amountCents: i.amountCents, categoryId: i.categoryId || 'e_Outros', method: 'pix', accountId, date: due, dueDate: due, paid: false, fund: pk, context, planItemId: i.id });
+        (t.history = t.history || []).push({ at: new Date().toISOString(), what: 'criada a partir do orçamento' }); made.push(t);
+      });
+    });
+    return { made, skipped };
+  };
+
   if (typeof module !== 'undefined') module.exports = E; else root.FC = E;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -1030,7 +1149,7 @@ window.openDrawer = () => {
   const d = document.createElement('div'); d.className = 'drawer-back'; d.id = 'drawer';
   d.innerHTML = `<div class="drawer"><div class="head"><div class="av">${esc(S.profile.name[0].toUpperCase())}</div><div><b>${esc(S.profile.name)}</b><small>Visão: ${CTXN[ctx()]}</small></div><button class="x" onclick="closeDrawer()" aria-label="Fechar">${ic('x')}</button></div>
   <button class="newbtn" onclick="closeDrawer();openPlus()">${ic('plus')}Novo lançamento</button>
-  <h4>Gestão</h4>${it('rec', 'cal', 'Recebimentos')}${it('plan', 'target', 'Planejamento')}${it('rel', 'chart', 'Relatórios')}${it('bancos', 'bank', 'Contas bancárias')}
+  <h4>Gestão</h4>${it('rec', 'cal', 'Recebimentos')}${it('orc', 'wallet', 'Orçamento')}${it('plan', 'target', 'Planejamento')}${it('rel', 'chart', 'Relatórios')}${it('bancos', 'bank', 'Contas bancárias')}
   <h4>Visão</h4>${cx('personal', 'Pessoal')}${cx('business', 'Profissional')}${cx('all', 'Consolidado')}
   <h4>Conta e ajuda</h4><button class="it" onclick="closeDrawer();openAppearance()">${ic('brush')}<span class="l">Personalizar aparência</span>${ic('chevR', 'c')}</button><button class="it" onclick="closeDrawer();openSettings()">${ic('sliders')}<span class="l">Configurações</span>${ic('chevR', 'c')}</button><button class="it" onclick="closeDrawer();exportData()">${ic('download')}<span class="l">Backup dos dados</span>${ic('chevR', 'c')}</button></div>`;
   d.addEventListener('click', (e) => { if (e.target === d) closeDrawer(); });
@@ -1046,6 +1165,7 @@ const accOpts = (sel) => ctxAccounts().map((a) => `<option value="${a.id}" ${a.i
 const catOpts = (kind, sel) => S.categories.filter((c) => c.kind === kind).map((c) => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 const ctxOfNew = () => ctx() === 'all' ? 'personal' : ctx();
 const val = (id) => document.getElementById(id).value;
+const planOpts = (sel) => E.planItems(S).filter((i) => ['fixed', 'variable'].includes(i.kind)).map((i) => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(i.name)} · dia ${E.cfg(S).payDays[i.slot - 1]}</option>`).join('');
 const F = (label, html, hint) => `<div class="field"><label>${label}</label>${html}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
 const optBtn = (i, t, s, fn) => `<button class="opt" onclick="${fn}"><span class="sq">${ic(i)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chevR', 'chev')}</button>`;
 const needAccount = () => { if (!ctxAccounts().length) { toast('Primeiro cadastre uma conta bancária.'); openAccount(); return true; } return false; };
@@ -1072,6 +1192,7 @@ window.openExpense = (d = {}) => {
   ${F('Quanto?', `<input id="x-val" inputmode="decimal" placeholder="R$ 0,00" value="${moneyIn(d.amountCents)}">`)}
   ${F('Quando?', `<input id="x-date" type="date" value="${d.date || E.today()}" oninput="refreshFund()">`)}
   ${F('Categoria', `<select id="x-cat">${catOpts('expense', d.categoryId)}</select>`, '<span id="x-sug">Sugerida automaticamente pelo que você digita.</span>')}
+  ${E.planItems(S).some((i) => ['fixed', 'variable'].includes(i.kind)) ? F('Item do orçamento (opcional)', `<select id="x-plan"><option value="">Automático</option>${planOpts()}</select>`, 'Automático usa o nome e a categoria. Escolha um item para ter certeza.') : ''}
   ${F('Como pagou?', chipsFor('x-m', 'xm', [['pix', 'Pix'], ['cash', 'Dinheiro'], ['debit_card', 'Débito'], ['boleto', 'Boleto'], ['credit_card', 'Cartão de crédito']], m))}
   <div id="x-acc"></div><div id="x-paidbox"></div><div id="x-fundbox"></div><div style="height:22px"></div><button class="btn" onclick="saveExpense()">Salvar despesa</button>`);
   mchg(); if (!d.categoryId) sugg();
@@ -1097,6 +1218,7 @@ window.saveExpense = (force) => {
     const credit = val('x-m') === 'credit_card', o = { amountCents: E.toCents(val('x-val')), desc: val('x-desc'), date: val('x-date'), categoryId: val('x-cat'), method: val('x-m'), context: ctxOfNew() };
     if (!o.desc.trim()) throw new Error('Diga o que foi pago.');
     if (!o.amountCents || o.amountCents <= 0) throw new Error('Informe o valor.');
+    const xp = document.getElementById('x-plan'); if (xp && xp.value) o.planItemId = xp.value;
     if (credit) { o.cardId = val('x-card'); o.merchant = val('x-merch'); o.installments = +val('x-inst') || 1; o.context = S.cards.find((x) => x.id === o.cardId).context; }
     else { o.accountId = val('x-ac'); o.fund = val('x-fund') || null; o.paid = window._paid === 1; if (!o.paid) o.dueDate = val('x-dd'); o.context = S.accounts.find((a) => a.id === o.accountId).context; }
     const dup = E.findDuplicate(S, Object.assign({ kind: 'expense' }, o));
@@ -1166,6 +1288,7 @@ window.openEdit = (id) => {
   ${F('Valor', `<input id="e-val" inputmode="decimal" value="${moneyIn(t.status === 'paid' ? (t.paidCents || t.amountCents) : t.amountCents)}" ${t.cardId ? 'disabled' : ''}>`, t.cardId ? 'O valor de compra no cartão não muda aqui. Cancele e lance de novo se precisar.' : '')}
   ${dt ? F(t.status === 'paid' ? (inc ? 'Data do recebimento' : 'Data do pagamento') : 'Vencimento', `<input id="e-date" type="date" value="${dt}">`) : ''}
   ${F('Categoria', `<select id="e-cat">${catOpts(inc ? 'income' : 'expense', t.categoryId)}</select>`)}
+  ${t.kind === 'expense' && !t.cardId && E.planItems(S).some((i) => ['fixed', 'variable'].includes(i.kind)) ? F('Item do orçamento', `<select id="e-plan"><option value="">Automático</option>${planOpts(t.planItemId)}</select>`) : ''}
   ${t.kind === 'expense' && !t.cardId ? F('Paga com qual recebimento?', `<select id="e-fund"><option value="">Sem vínculo</option>${[...new Set(E.fundOptions(S, t.dueDate || t.purchaseDate).concat(t.fund ? [t.fund] : []))].map((pk) => `<option value="${pk}" ${pk === t.fund ? 'selected' : ''}>${E.fundLabel(S, pk)}</option>`).join('')}</select>`) : ''}
   ${inc ? F('Período de recebimento', `<select id="e-slot"><option value="">Automático (pela data)</option><option value="1" ${t.slot === 1 ? 'selected' : ''}>Dia ${E.cfg(S).payDays[0]}</option><option value="2" ${t.slot === 2 ? 'selected' : ''}>Dia ${E.cfg(S).payDays[1]}</option></select>`) : ''}
   <div style="height:22px"></div><button class="btn" onclick="saveEdit('${id}')">Salvar alterações</button>`);
@@ -1175,6 +1298,7 @@ window.saveEdit = (id) => {
     const t = S.tx.find((x) => x.id === id), patch = { desc: val('e-desc').trim(), categoryId: val('e-cat') };
     if (!patch.desc) throw new Error('Diga o que foi.');
     if (t.kind === 'expense' && !t.cardId) patch.fund = val('e-fund') || null;
+    if (document.getElementById('e-plan')) patch.planItemId = val('e-plan') || null;
     if (t.kind === 'income') patch.slot = +val('e-slot') || null;
     if (!t.cardId) {
       const c = E.toCents(val('e-val')); if (!Number.isInteger(c) || c <= 0) throw new Error('Informe um valor maior que zero.');
@@ -1227,6 +1351,7 @@ const periodTiles = (pk) => {
   <div class="kgrid"><div class="glass kpi"><div class="t">Despesas vinculadas</div><div class="v">${partMoney(p.linkedCents)}</div></div><div class="glass kpi"><div class="t">Contas pendentes · ${p.pendingCount}</div><div class="v">${partMoney(p.pendingCents)}</div></div></div>
   <div class="kgrid"><div class="glass kpi"><div class="t">Contas pagas · ${p.paidCount}</div><div class="v">${partMoney(p.paidCents)}</div></div><div class="glass kpi"><div class="t">Saldo projetado</div><div class="v ${p.projectedCents < 0 ? 'neg' : ''}">${partMoney(p.projectedCents)}</div></div></div>
   <div class="glass sobrar" style="margin-bottom:12px"><div><div class="t">Saldo disponível do período</div><div class="v ${p.availableCents < 0 ? 'neg' : ''}">${partMoney(p.availableCents)}</div><small>Só o que já entrou menos o que já foi pago</small></div><button class="link" onclick="go('rec')">Detalhes</button></div>
+  ${E.planItems(S).length ? (() => { const P = E.planPeriod(S, pk, ctx()); return `<div class="glass sobrar" style="margin-bottom:12px" onclick="go('orc')"><div><div class="t">Orçamento deste recebimento</div><div class="v ${P.balanceCents < 0 ? 'neg' : ''}">${partMoney(P.balanceCents)}</div><small>Sobra do plano · planejado ${brl(P.plannedTotal)} de ${brl(P.incomeBase)}</small></div><button class="link" style="padding:0">Abrir</button></div>`; })() : ''}
   <details class="how"><summary>Como calculamos?</summary>Previsto: tudo que você espera receber neste período. Recebido: o que você já confirmou. Projetado: previsto − despesas vinculadas. Disponível: recebido − o que já foi pago. Receita que ainda não entrou nunca conta como dinheiro disponível.</details>`;
 };
 function vInicio() {
@@ -1262,6 +1387,80 @@ function periodCard(pk) {
   ${n ? p.exps.sort((a, b) => a.dueDate.localeCompare(b.dueDate)).map(txRow).join('') + p.invs.map(invRow2).join('') : `<div class="empty" style="padding:16px">Nenhuma conta vinculada ainda.</div>`}
   <div style="height:8px"></div>${stat('Despesas vinculadas', brl(p.linkedCents))}${stat('Pendentes · ' + p.pendingCount, brl(p.pendingCents))}${stat('Pagas · ' + p.paidCount, brl(p.paidCents))}${stat('Saldo projetado', brl(p.projectedCents), p.projectedCents < 0 ? 'neg' : '')}${stat('Saldo disponível', brl(p.availableCents), p.availableCents < 0 ? 'neg' : '')}</div>`;
 }
+// ───── Orçamento por recebimento
+const planKinds = ['fixed', 'variable', 'reserve', 'invest', 'saving'];
+const planGroupTitle = { fixed: 'Contas fixas', variable: 'Orçamentos variáveis', alloc: 'Reservas e investimentos' };
+const planIcon = (k) => ({ fixed: 'receipt', variable: 'cart', reserve: 'wallet', invest: 'chart', saving: 'wallet' }[k]);
+const planStatus = (r) => ({ pending: ['A pagar', 'warn'], paid: ['Pago', 'ok'], none: ['Não lançado', ''], over: ['Passou do orçado', 'bad'], near: ['Quase no limite', 'warn'], ok: ['Dentro do orçado', 'ok'], done: ['Separado', 'ok'], todo: ['A separar', ''] }[r.status]);
+const planRow = (r, pk) => {
+  const it = r.item, alloc = it.kind === 'reserve' || it.kind === 'invest' || it.kind === 'saving', st = planStatus(r);
+  let sub, right, bar = '';
+  if (alloc) { sub = E.PLAN_KINDS[it.kind] + ' · ' + st[0]; right = `<button class="pill ${r.done ? '' : 'pri'}" onclick="event.stopPropagation();togglePlanDone('${pk}','${it.id}')">${r.done ? 'Desfazer' : 'Separei'}</button>`; }
+  else if (it.kind === 'fixed') { sub = (it.dueDay ? 'Vence dia ' + it.dueDay + ' · ' : '') + st[0] + (r.usedCents && r.usedCents !== it.amountCents ? ' · real ' + brl(r.usedCents) : ''); right = `<div class="a ${r.status === 'paid' ? 'pos' : ''}">${brl(it.amountCents)}</div>`; }
+  else { const left = it.amountCents - r.usedCents, pct = Math.min(100, Math.round(r.usedCents * 100 / it.amountCents)); sub = 'Gasto ' + brl(r.usedCents) + ' de ' + brl(it.amountCents); right = `<div class="a ${left < 0 ? 'bad' : ''}">${left < 0 ? '−' + brl(-left) : brl(left)}<small style="display:block;font-size:11px;font-weight:700;color:var(--mut)">${left < 0 ? 'acima' : 'resta'}</small></div>`; bar = `<div class="bar"><i style="width:${pct}%;${r.status === 'over' ? 'background:var(--bad)' : r.status === 'near' ? 'background:var(--warn)' : ''}"></i></div>`; }
+  return `<div class="row" onclick="openPlanItem('${it.id}')"><div class="sq">${ic(planIcon(it.kind))}</div><div class="m"><b>${esc(it.name)}</b><small>${esc(sub)}</small>${bar}</div>${right}</div>`;
+};
+function planCard(pk) {
+  const P = E.planPeriod(S, pk, ctx()), q = E.parsePk(pk), day = E.cfg(S).payDays[q.slot - 1];
+  const grp = (key, f) => { const rows = P.rows.filter(f); if (!rows.length) return ''; const tot = rows.reduce((a, r) => a + r.plannedCents, 0); return `<div class="sub"><span>${planGroupTitle[key]} · ${brl(tot)}</span></div>${rows.map((r) => planRow(r, pk)).join('')}`; };
+  const stat = (l, v, cls = '') => `<div class="stat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
+  return `<div class="card"><div class="phead"><h3>Orçamento do dia ${day}</h3><div class="lead">Período de ${shortD(P.range.start)} a ${shortD(P.range.end)}</div></div>
+  <div class="mini"><div><small>Rendimento</small><b>${brl(P.incomeBase)}</b></div><div><small>Planejado</small><b>${brl(P.plannedTotal)}</b></div></div>
+  ${grp('fixed', (r) => r.item.kind === 'fixed')}${grp('variable', (r) => r.item.kind === 'variable')}${grp('alloc', (r) => r.item.kind !== 'fixed' && r.item.kind !== 'variable')}
+  <div style="padding:6px 18px 2px"><button class="link" style="padding:0" onclick="openPlanItem(null,${q.slot})">+ Adicionar item</button></div>
+  <div style="height:6px"></div>${P.offCents ? `<div class="stat" onclick="openOffPlan('${pk}')" style="cursor:pointer"><span>Gastos fora do orçamento · ${P.off.length}</span><b>${brl(P.offCents)}</b></div>` : ''}
+  ${stat('Sobra do plano', brl(P.balanceCents), P.balanceCents < 0 ? 'neg' : 'pos')}${stat('Sobra com o que já aconteceu', brl(P.realBalanceCents), P.realBalanceCents < 0 ? 'neg' : '')}</div>`;
+}
+function vOrc() {
+  const pk1 = E.pk(month, 1), pk2 = E.pk(month, 2), pd = E.cfg(S).payDays;
+  if (!E.planItems(S).length) return `${topbar()}${pageH('Orçamento', 'Decida quanto cada recebimento vai pagar.')}
+  <div class="card" style="padding:20px"><h3 style="margin:0 0 8px">Seu orçamento por recebimento</h3><p class="lead" style="margin:0 0 16px">Para cada recebimento (dia ${pd[0]} e dia ${pd[1]}), liste as contas fixas, os gastos que quer limitar e o que vai guardar. O app compara com o que você realmente gasta.</p>
+  <button class="btn" onclick="importPlan()">Usar o orçamento da minha planilha</button><div style="height:10px"></div><button class="btn ghost" onclick="openPlanIncome()">Começar do zero</button></div>`;
+  const a = E.planPeriod(S, pk1, ctx()), b = E.planPeriod(S, pk2, ctx());
+  const row = (l, x, y, cls = '', tot = false) => `<tr class="${tot ? 'tot' : ''}"><td>${l}</td><td class="${cls}">${brl(x)}</td><td class="${cls}">${brl(y)}</td><td class="${cls}">${brl(x + y)}</td></tr>`;
+  const warn = [a, b].filter((p) => p.balanceCents < 0).map((p) => `O orçamento do dia ${pd[E.parsePk(p.pk).slot - 1]} passa do rendimento em ${brl(-p.balanceCents)}.`);
+  return `${topbar()}${pageH('Orçamento', 'Quanto cada recebimento paga, comparado ao que você gasta.', `<button class="link" onclick="openPlanIncome()">Rendimentos</button>`)}${monthPicker()}
+  <div class="card"><table class="cmp"><thead><tr><th></th><th>Dia ${pd[0]}</th><th>Dia ${pd[1]}</th><th>Mês</th></tr></thead><tbody>
+  ${row('Rendimento', a.incomeBase, b.incomeBase)}${row('Planejado', a.plannedTotal, b.plannedTotal)}${row('Já pago', a.paidTotal, b.paidTotal, 'pos')}${row('Sobra do plano', a.balanceCents, b.balanceCents, '', true)}</tbody></table></div>
+  ${warn.length ? `<div class="note warn" style="margin:-4px 0 14px">${warn.join(' ')} Ajuste algum item para fechar a conta.</div>` : ''}
+  <button class="btn ghost" style="margin-bottom:14px" onclick="openGenerate()">Lançar as contas fixas deste mês</button>
+  ${planCard(pk1)}${planCard(pk2)}
+  <details class="how"><summary>Como funciona?</summary>Cada item pertence a um recebimento. Contas fixas viram lançamentos "a pagar" quando você usa o botão acima (nunca duplicam e nada é pago sozinho). Orçamentos variáveis comparam o limite com o que você gastou no período, pelo item escolhido no lançamento, pelo nome na descrição ou pela categoria, quando ela é única. Reservas e investimentos são separações de dinheiro: marque "Separei" quando fizer. Tirar um item do orçamento nunca apaga gastos.</details>`;
+}
+window.togglePlanDone = (pk, id) => { E.planSetDone(S, pk, id, !S.plan.done[pk + '|' + id]); save(); render(); };
+window.importPlan = () => ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); save(); toast('Orçamento importado'); render(); } catch (e) { toast(e.message); } }, 'Importar');
+window.openPlanIncome = () => { const pd = E.cfg(S).payDays, pl = S.plan; sheet(`<h2>Rendimentos planejados</h2><p class="lead">Quanto você espera receber em cada dia. É a base do orçamento.</p>
+  ${F('Recebimento do dia ' + pd[0], `<input id="pi-1" inputmode="decimal" value="${pl.income[0] ? moneyIn(pl.income[0]) : ''}" placeholder="0,00">`)}${F('Recebimento do dia ' + pd[1], `<input id="pi-2" inputmode="decimal" value="${pl.income[1] ? moneyIn(pl.income[1]) : ''}" placeholder="0,00">`)}
+  <div style="height:22px"></div><button class="btn" onclick="savePlanIncome()">Salvar</button>`); };
+window.savePlanIncome = () => { try { [1, 2].forEach((n) => { const v = val('pi-' + n).trim(); E.planSetIncome(S, n, v ? E.toCents(v) : 0); }); save(); closeSheet(); render(); } catch (e) { toast(e.message); } };
+window.openPlanItem = (id, slot) => {
+  const it = id ? S.plan.items.find((x) => x.id === id) : { slot: slot || 1, kind: 'fixed', name: '', amountCents: 0, dueDay: '', categoryId: '' }, pd = E.cfg(S).payDays;
+  sheet(`<h2>${id ? 'Editar item' : 'Novo item'}</h2>
+  ${F('Nome', `<input id="pl-n" value="${esc(it.name)}" placeholder="Ex.: Aluguel">`)}
+  ${F('Tipo', `<select id="pl-k" onchange="$('#pl-due').style.display=this.value==='fixed'?'block':'none'">${planKinds.map((k) => `<option value="${k}" ${k === it.kind ? 'selected' : ''}>${E.PLAN_KINDS[k]}</option>`).join('')}</select>`)}
+  ${F('Valor planejado', `<input id="pl-v" inputmode="decimal" value="${it.amountCents ? moneyIn(it.amountCents) : ''}" placeholder="0,00">`)}
+  ${F('Sai de qual recebimento?', `<select id="pl-s"><option value="1" ${it.slot === 1 ? 'selected' : ''}>Dia ${pd[0]}</option><option value="2" ${it.slot === 2 ? 'selected' : ''}>Dia ${pd[1]}</option></select>`)}
+  <div id="pl-due" style="display:${it.kind === 'fixed' ? 'block' : 'none'}">${F('Dia do vencimento', `<input id="pl-d" type="number" min="1" max="31" inputmode="numeric" value="${it.dueDay || ''}" placeholder="Ex.: 10">`, 'Usado para lançar a conta fixa com a data certa.')}</div>
+  ${F('Categoria', `<select id="pl-c"><option value="">Sem categoria</option>${catOpts('expense', it.categoryId)}</select>`, 'Ajuda a contar os gastos deste item.')}
+  <div style="height:22px"></div><button class="btn" onclick="savePlanItem('${id || ''}')">Salvar</button>
+  ${id ? `<div style="height:10px"></div><button class="btn ghost" onclick="removePlanItem('${id}')">Tirar do orçamento</button>` : ''}`);
+};
+window.savePlanItem = (id) => {
+  try {
+    const o = { name: val('pl-n'), kind: val('pl-k'), amountCents: E.toCents(val('pl-v')), slot: +val('pl-s'), dueDay: val('pl-d') ? +val('pl-d') : null, categoryId: val('pl-c') || null };
+    if (id) E.planEdit(S, id, o); else E.planAdd(S, o);
+    save(); closeSheet(); toast('Orçamento atualizado'); render();
+  } catch (e) { toast(e.message); }
+};
+window.removePlanItem = (id) => ask('Tirar este item do orçamento? Os lançamentos e gastos já feitos continuam existindo.', () => { E.planRemove(S, id); save(); closeSheet(); render(); }, 'Tirar');
+window.openOffPlan = (pk) => { const P = E.planPeriod(S, pk, ctx()); sheet(`<h2>Fora do orçamento</h2><p class="lead">Gastos deste período que não se encaixam em nenhum item. Para incluí-los, escolha o item ao editar o lançamento.</p><div class="card" style="margin:0">${P.off.map(txRow).join('')}</div>`); };
+window.openGenerate = () => {
+  const accs = ctxAccounts(); if (!accs.length) return notice('Cadastre uma conta', 'Para lançar as contas fixas, o app precisa saber de qual conta elas saem.', () => go('contas'));
+  sheet(`<h2>Lançar contas fixas</h2><p class="lead">Cria, como "a pagar", as contas fixas de ${MONTHS[+month.slice(5) - 1]} que ainda não foram lançadas, ligadas ao recebimento do orçamento. Nada é pago automaticamente e nada é duplicado.</p>${F('De qual conta saem?', `<select id="gn-a">${accOpts()}</select>`)}
+  <div style="height:22px"></div><button class="btn" onclick="doGenerate()">Lançar</button>`);
+};
+window.doGenerate = () => { try { const acc = S.accounts.find((a) => a.id === val('gn-a')), r = E.planGenerate(S, month, { accountId: acc.id, context: acc.context }); save(); closeSheet(); toast(r.made.length ? r.made.length + ' contas lançadas' + (r.skipped.length ? ' · ' + r.skipped.length + ' já existiam' : '') : 'Nada novo para lançar'); render(); } catch (e) { toast(e.message); } };
+
 function vRec() {
   const pk1 = E.pk(month, 1), pk2 = E.pk(month, 2), a = E.periodSummary(S, pk1, ctx(), E.today()), b = E.periodSummary(S, pk2, ctx(), E.today()), pd = E.cfg(S).payDays;
   const un = E.unlinked(S, ctx(), { from: month + '-01', to: E.endOfMonth(month + '-01') }), unSum = un.reduce((x, i) => x + i.amountCents, 0);
@@ -1485,7 +1684,7 @@ function vRel() {
 function render() {
   if (!CLOUD || user) { $('#nav').style.display = ''; }
   renderNav(); $('#fab').style.display = tab === 'inicio' ? 'none' : 'grid';
-  $('#app').innerHTML = { inicio: vInicio, mov: vMov, contas: vContas, cartoes: vCartoes, plan: vPlan, rel: vRel, bancos: vBancos, rec: vRec }[tab]();
+  $('#app').innerHTML = { inicio: vInicio, mov: vMov, contas: vContas, cartoes: vCartoes, plan: vPlan, rel: vRel, bancos: vBancos, rec: vRec, orc: vOrc }[tab]();
 }
 applyTheme(); initHide();
 if (CFG_SET && !window.supabase) { $('#nav').style.display = 'none'; $('#app').innerHTML = '<div class="login"><h1>Sem conexão</h1><div class="lead">Não foi possível carregar o serviço de login. Verifique a internet e abra o app novamente. Seus dados continuam guardados.</div></div>'; } else if (CLOUD) { renderLoginSoon(); } else { fixState(); syncPref(); runMigrations(); initHide(); if (S.recurrences.length) { E.generateRecurring(S, E.today(), 12); save(); } render(); }
