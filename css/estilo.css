@@ -26,7 +26,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .money{font-size:34px;font-weight:800;letter-spacing:-2px;line-height:1}.money .d{font-weight:600;opacity:.45;letter-spacing:-.5px;font-size:.55em;margin-left:2px}
 .bal .money{font-size:54px}.money.neg{color:var(--bad)}
 .badge{background:var(--pri);color:var(--onpri);font-weight:800;font-size:13px;padding:7px 12px;border-radius:99px;white-space:nowrap}
-.badge.neg{background:var(--bad)}
+.badge.neg{background:var(--badbg);color:var(--bad)}
 .qa{display:flex;justify-content:space-between;gap:10px;margin:22px 0 4px}
 .qa button{flex:1;background:none;border:0;color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:9px;font-size:13px;font-weight:700;cursor:pointer}
 .qa .c{width:62px;height:62px;border-radius:50%;background:var(--white);color:var(--onwhite);display:grid;place-items:center}

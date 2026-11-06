@@ -11,6 +11,10 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ## [Não publicado]
 
+### Corrigido
+- **Barra "Projeção negativa" sem texto** (tela Início, embaixo do saldo): o texto tinha a mesma cor rosa do fundo e ficava invisível (duas regras de cor disputavam; a errada ganhava). Agora a barra negativa tem fundo rosa clarinho e texto rosa forte, como os outros avisos do app — contraste 6,8 no modo escuro e 4,6 no claro (mínimo recomendado: 4,5). A barra azul "Vai sobrar" não mudou.
+- Etiqueta de versão dos arquivos subiu para `?v=3`.
+
 ### Alterado
 - **Código organizado em arquivos separados** (Fase 2). O `index.html` de ≈2.150 linhas virou:
   `index.html` (esqueleto, ≈20 linhas) + `css/estilo.css` (aparência) + `js/temas.js` (cores) + `js/motor.js` (cálculos) + `js/app.js` (telas).
