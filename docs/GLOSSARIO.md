@@ -53,4 +53,7 @@
 - **Política (policy)** — cada regra do porteiro (ex.: "só pode ver a linha se for o dono").
 - **Trigger (gatilho)** — regra "quando acontecer X, faça Y automaticamente".
 - **Chave publishable / anon** — chave pública que identifica o app no Supabase; pode ficar visível, porque quem protege os dados é o RLS.
+- **Chave primária (primary key)** — a coluna que identifica cada linha de forma única, como o CPF de uma pessoa.
+- **Chave estrangeira (foreign key)** — coluna que "aponta" para uma linha de outra tabela (ex.: os dados apontam para o usuário dono).
+- **ON DELETE CASCADE** — regra "efeito dominó": se o item principal for apagado, tudo o que aponta para ele é apagado junto.
 - **`user_id` / UUID** — código único que identifica cada usuário.

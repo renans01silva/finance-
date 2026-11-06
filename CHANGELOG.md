@@ -34,7 +34,7 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 - `docs/SUPABASE.md`: diagnóstico do banco de dados (tabelas, regras de segurança, funções e pendências).
 
 ### Segurança
-- Diagnóstico do Supabase (06/11/2026): todas as 4 tabelas com RLS ligado e regras corretas. Pendências: confirmar "Confirm email" ligado e se o backup automático (trigger) está ativo.
+- Diagnóstico do Supabase (06/11/2026): todas as 4 tabelas com RLS ligado e regras corretas. Backup automático (trigger `app_state_keep_history`) confirmado ativo. Pendência: ligar "Confirm email" depois que a esposa criar a conta.
 
 > Nenhuma linha do app foi alterada nesta etapa.
 

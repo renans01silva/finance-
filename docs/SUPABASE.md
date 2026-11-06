@@ -31,16 +31,28 @@ Todas as tabelas estão com a **proteção RLS ligada** e com regras que deixam 
 ## Funções do banco
 
 - **`accept_share(p_id)`** — aceita um convite do Casal. Só funciona se o e-mail de quem está logado for o e-mail convidado.
-- **`keep_history()`** — toda vez que `app_state` é atualizado, guarda a versão anterior em `app_state_history` e mantém só as 50 mais recentes. *Ainda não confirmamos se o "gatilho" (trigger) que chama essa função está ativo — ver pendência 2.*
+- **`keep_history()`** — toda vez que `app_state` é atualizado, guarda a versão anterior em `app_state_history` e mantém só as 50 mais recentes. ✅ *Confirmado em 06/11/2026: o gatilho `app_state_keep_history` (BEFORE UPDATE em `app_state`) está ativo.*
 
 > **Função / trigger:** uma *função* é uma pequena receita guardada no banco. Um *trigger* (gatilho) é a regra "quando acontecer X, rode a receita Y automaticamente".
 
 ## Pendências / pontos de atenção
 
 1. **Confirmação de e-mail (importante para o Casal).** *Status: confirmado DESLIGADO (06/11/2026). Plano: ligar depois que a esposa do Renan criar a conta dela.* O Casal libera o resumo pelo **e-mail** do convidado. Se a confirmação de e-mail estiver desligada, alguém poderia criar uma conta com o e-mail de outra pessoa (sem ter acesso à caixa de entrada) e ver um resumo compartilhado com ela. **Verificar:** Supabase → *Authentication* → *Sign In / Providers* → *Email* → **"Confirm email"** deve estar **ligado**.
-2. **Confirmar se o backup automático (trigger) está ativo** — rodar a consulta abaixo no SQL Editor.
+2. ✅ **Backup automático (trigger) ativo** — confirmado em 06/11/2026.
 3. ✅ **Site URL** (Authentication → URL Configuration) = `https://finance-renan.pages.dev` *(corrigido em 06/11/2026; antes era `http://localhost:3000`)* — é para onde levam os links dos e-mails (confirmação de conta, recuperação de senha).
 4. O app ainda **não tem botão** para restaurar uma versão de `app_state_history`; hoje isso seria feito manualmente no Supabase (com ajuda do Claude).
+
+## Chaves e ligações entre tabelas (06/11/2026)
+| Tabela | Chave principal | Observação |
+|---|---|---|
+| `app_state` | `user_id` | 1 linha por usuário |
+| `app_state_history` | `id` | — |
+| `shares` | `id` | Não deixa convidar o mesmo e-mail duas vezes (`owner_id` + `viewer_email` únicos) |
+| `summaries` | `user_id` | 1 resumo por usuário |
+
+> ⚠️ **Cuidado:** todas as tabelas estão ligadas ao usuário com **"ON DELETE CASCADE"** — se um usuário for apagado em
+> *Authentication → Users*, **todos os dados dele (inclusive o histórico de backup) são apagados junto**, sem volta.
+> Nunca apague um usuário ali sem antes fazer backup pelo app.
 
 ### Consulta: triggers e chaves (só leitura)
 ```sql
