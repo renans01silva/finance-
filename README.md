@@ -21,7 +21,11 @@ Funciona no navegador e pode ser **instalado na tela inicial** (PWA).
 ## Como funciona por dentro
 | Parte | Onde |
 |---|---|
-| Telas, cores e lógica | `index.html` |
+| Esqueleto da página | `index.html` |
+| Aparência (cores, tamanhos) | `css/estilo.css` |
+| Paletas de cor | `js/temas.js` |
+| Cálculos de dinheiro | `js/motor.js` |
+| Telas e botões | `js/app.js` |
 | Conexão com o banco de dados | `config.js` → [Supabase](docs/SUPABASE.md) |
 | Instalação no celular | `manifest.webmanifest` + ícones |
 
@@ -39,7 +43,7 @@ Para rodar, na pasta do projeto: `node --test tests/motor.test.js`
 
 ## Publicação
 O app está hospedado no **Cloudflare Pages** (projeto `finance-renan`).
-Para publicar uma nova versão: gerar um `.zip` com os arquivos do projeto e enviá-lo no painel do Cloudflare
+Para publicar uma nova versão: gerar o `.zip` do site (só os arquivos do app: `index.html`, `config.js`, `manifest.webmanifest`, ícones, `css/` e `js/`) e enviá-lo no painel do Cloudflare
 (**Workers & Pages** → `finance-renan` → **Create deployment**).
 
 > Até 06/11/2026 o app ficava no GitHub Pages. A conta do GitHub foi suspensa nesse dia

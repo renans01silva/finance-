@@ -11,6 +11,14 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ## [Não publicado]
 
+### Alterado
+- **Código organizado em arquivos separados** (Fase 2). O `index.html` de ≈2.150 linhas virou:
+  `index.html` (esqueleto, ≈20 linhas) + `css/estilo.css` (aparência) + `js/temas.js` (cores) + `js/motor.js` (cálculos) + `js/app.js` (telas).
+  O conteúdo foi só recortado e colado — **o app funciona exatamente igual**.
+- Conferências feitas: (1) juntando os pedaços de volta, o resultado é idêntico ao original; (2) os 29 testes passam; (3) a versão antiga e a nova abertas no navegador com os mesmos dados de exemplo mostram as 10 telas, o menu e os formulários **idênticos**, sem nenhum erro.
+- Etiqueta de versão `?v=2` nos arquivos, para o celular não misturar arquivos velhos e novos.
+- O `.zip` enviado ao Cloudflare agora leva só os arquivos do app (documentação e testes deixam de ficar públicos no site).
+
 ### Adicionado
 - **Testes automáticos** (`tests/`): 29 provas que conferem sozinhas os cálculos do motor financeiro — dinheiro em centavos, datas, faturas e parcelamento, saldos, regras de segurança, contas recorrentes, migração de dados antigos e duplicidade. Resultado: **29 de 29 passando**, nenhum erro de cálculo encontrado.
 - Conferido que os testes realmente pegam erros: estragando de propósito a divisão de parcelas (numa cópia), 2 testes falharam na hora.

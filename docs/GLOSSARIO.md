@@ -21,6 +21,7 @@
 - **Design tokens** — "catálogo" de cores e estilos com nome (ex.: `--pri` = cor principal).
 - **Teste automático** — "lista de checagem" que o computador roda sozinho para conferir se o código continua dando os resultados certos.
 - **Node (Node.js)** — programa que roda JavaScript fora do navegador; usado aqui para rodar os testes.
+- **Cache** — "memória" do navegador que guarda arquivos já baixados para abrir mais rápido. Por isso usamos a etiqueta `?v=N`: ao mudar o número, o navegador baixa a versão nova.
 - **Console** — painel escondido do navegador onde aparecem mensagens de erro do código.
 
 ## Git e GitHub

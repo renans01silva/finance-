@@ -71,7 +71,11 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 ### B3. Arquivos
 | Arquivo | Papel |
 |---|---|
-| `index.html` | O app inteiro (≈2.150 linhas), dividido em blocos — ver B4 |
+| `index.html` | Só o "esqueleto" (≈20 linhas): cabeçalho e a lista de arquivos carregados, na ordem certa |
+| `css/estilo.css` | Toda a aparência (CSS) |
+| `js/temas.js` | Paletas de cor e modo claro/escuro (`window.FCT`) |
+| `js/motor.js` | Motor financeiro: todos os cálculos (`window.FC`) |
+| `js/app.js` | Telas, login, sincronização e botões |
 | `config.js` | URL do Supabase e chave **publishable** (pública por natureza; a segurança vem do RLS — ver `docs/SUPABASE.md`) |
 | `manifest.webmanifest` | Dados da PWA (nome, ícones, cores) |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Ícones |
@@ -79,11 +83,13 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 | `tests/` | Testes automáticos do motor financeiro (não fazem parte do app) |
 | `CHANGELOG.md` | Diário de alterações |
 
-### B4. Mapa do `index.html` (procure pelos comentários; números de linha mudam)
-1. **`<style>`** — todo o CSS. Cores sempre por variáveis CSS (`var(--pri)` etc.).
-2. **Script "temas (design tokens)"** — exporta `window.FCT`. Paletas (`azul`, `verde`, `roxo`, `grafite`, `marinho`, `claro`) × modos (`auto`, `light`, `dark`). Também calcula contraste (WCAG).
-3. **Script "motor financeiro"** — exporta `window.FC` (usado como `E` no app). Só lógica, sem tela: funções `E.addIncome`, `E.addExpense`, `E.invoiceFor`, `E.invoices`, `E.payInvoice`, `E.accountBalance`, `E.monthSummary`, `E.plan*`, `E.migrate`, `E.couple*` etc. Escrito para também rodar no Node (`module.exports`), o que permite testes automáticos no futuro.
-4. **Script do app (telas)** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov`, `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
+### B4. Como o código está organizado
+A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (CDN) → `js/temas.js` → `js/motor.js` → `js/app.js`.
+1. **`css/estilo.css`** — todo o CSS. Cores sempre por variáveis CSS (`var(--pri)` etc.).
+2. **`js/temas.js`** — exporta `window.FCT`. Paletas (`azul`, `verde`, `roxo`, `grafite`, `marinho`, `claro`) × modos (`auto`, `light`, `dark`). Também calcula contraste (WCAG).
+3. **`js/motor.js`** — exporta `window.FC` (usado como `E` no app). Só lógica, sem tela: funções `E.addIncome`, `E.addExpense`, `E.invoiceFor`, `E.invoices`, `E.payInvoice`, `E.accountBalance`, `E.monthSummary`, `E.plan*`, `E.migrate`, `E.couple*` etc. Também roda no Node (`module.exports`) — é assim que os testes o carregam.
+4. **`js/app.js`** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov`, `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
+- **Etiqueta de versão:** o `index.html` carrega os arquivos com `?v=N` (ex.: `js/app.js?v=2`). **Ao publicar uma mudança em CSS/JS, aumentar o N** em todas as linhas, para o celular não usar uma cópia antiga guardada na memória.
 
 ### B5. Regras de negócio que NUNCA podem ser quebradas
 - **Dinheiro sempre em centavos inteiros** (`amountCents`), nunca número com vírgula. Converter com `E.toCents`, exibir com `E.brl`. Dividir parcelas com `E.splitCents` (não perde centavo).
@@ -105,14 +111,17 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 
 ### B7. Como testar
 - **Testes automáticos do motor financeiro** (29 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
-  - `tests/carregar-motor.js` lê o `index.html` e extrai só o bloco "motor financeiro" (por isso esse comentário no `<script>` não pode ser removido).
+  - `tests/carregar-motor.js` carrega o `js/motor.js` isolado, sem navegador.
   - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
   - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.
 - Para conferir as telas: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** de publicar.
-- Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console.
+- Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console. Em mudanças de organização (sem mudar comportamento), comparar as telas da versão antiga e da nova com os mesmos dados — foi assim na Fase 2.
+- Separar também o backup completo do projeto (`git archive --format=zip HEAD`) para o Renan guardar no iCloud.
 
 ### B8. Git e publicação
 - Trabalhar sempre em branch separado (ex.: `claude/...`). Mensagens de commit em português, descrevendo o que e por quê.
-- **Publicar (hoje):** gerar um `.zip` com os arquivos do projeto (`git archive --format=zip HEAD`), enviar ao Renan e guiá-lo no Cloudflare: **Workers & Pages** → `finance-renan` → **Create deployment** → tocar no link "arquivo" (no iPhone, a área de arrastar não funciona) → **Implantar site**.
+- **Publicar (hoje):** gerar o `.zip` **do site** — só os arquivos do app, sem `docs/`, `tests/` e `.md`:
+  `git archive --format=zip -o finance-site.zip HEAD index.html config.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png css js`
+  Enviar ao Renan e guiá-lo no Cloudflare: **Workers & Pages** → `finance-renan` → **Create deployment** → tocar no link "arquivo" (no iPhone, a área de arrastar não funciona) → **Implantar site**.
 - Depois de publicar, pedir ao Renan para testar no celular (login + dados aparecendo).
 - Se o GitHub voltar: decidir com o Renan se conecta o Cloudflare ao repositório (publicação automática) ou mantém o envio manual.
