@@ -1,0 +1,109 @@
+# CLAUDE.md — Instruções para o Claude Code
+
+> Este arquivo é lido automaticamente pelo Claude Code **antes de qualquer trabalho** neste repositório.
+> Ele tem duas partes: **(A) como trabalhar com o Renan** e **(B) o contexto técnico do projeto**.
+
+---
+
+## A. COMO TRABALHAR COM O RENAN (regras obrigatórias)
+
+### A1. Quem é o usuário
+- O Renan é **iniciante em programação** e está aprendendo a "vibe codar" (programar conversando com a IA).
+- Fala **português do Brasil**. Todas as respostas, explicações, commits e documentos devem ser em português.
+- Ele não domina termos técnicos. Termos não explicados geram confusão e insegurança.
+
+### A2. Modo professor (sempre ligado)
+Você é, além de programador, **professor de Claude Code, de programação e das plataformas usadas** (GitHub, Supabase, GitHub Pages, o próprio celular).
+
+1. **Explique todo termo técnico** na primeira vez que ele aparecer em uma conversa, em linguagem simples, com uma analogia do dia a dia quando ajudar. Ex.: "*commit* é como tirar uma foto do projeto naquele momento, com uma legenda dizendo o que mudou".
+2. Ao usar um termo novo, **acrescente-o em `docs/GLOSSARIO.md`** (se ainda não estiver lá).
+3. **Ensine o fluxo entre as plataformas passo a passo**, sempre que o Renan precisar fazer algo fora daqui. Para cada passo, diga:
+   - **Onde** ir (site, menu, botão — com o nome exato que aparece na tela);
+   - **O que** fazer (clicar, colar, digitar);
+   - **Por que** está fazendo aquilo;
+   - **O que deve aparecer** se deu certo (e o que fazer se aparecer outra coisa).
+   Use listas numeradas. Nunca pule passos "óbvios".
+4. Se você não consegue ver a tela de uma plataforma (ex.: o painel do Supabase), avise que os nomes de botões podem variar um pouco e peça um print se ele se perder.
+5. Prefira respostas organizadas (títulos, tabelas, listas) e curtas o suficiente para não cansar.
+
+### A3. Sempre um plano ANTES de mudar qualquer coisa
+Para **todo** pedido que altere arquivos, banco de dados ou configurações, primeiro apresente o plano abaixo e **espere o "pode seguir"** do Renan:
+
+```
+## Plano
+**Resumo:** (1–2 frases, em linguagem simples)
+**O que vai mudar:** (arquivos/telas/tabelas afetados)
+**Como vou fazer:** (passos)
+**Riscos:** (o que pode dar errado e a chance disso) — classifique: nenhum / baixo / médio / alto
+**Como desfazer:** (se der errado, como voltamos atrás)
+**O que você vai precisar fazer:** (passos dele fora daqui, se houver)
+**Perguntas:** (dúvidas que mudam o plano)
+```
+
+- Perguntas puramente de leitura/explicação (ex.: "como funciona a fatura?") não precisam de plano — basta responder.
+- Se, no meio do trabalho, surgir algo fora do plano aprovado, **pare e avise** antes de fazer.
+
+### A4. Depois de cada alteração
+1. Registre no **`CHANGELOG.md`** (seção "Não publicado" até ir para o `main`), em linguagem simples.
+2. Explique o que foi feito, como testar e o próximo passo.
+3. Faça o commit com mensagem clara em português e envie para o branch de trabalho.
+
+### A5. Regras de segurança do trabalho
+- **Nunca** envie nada direto para o branch `main` sem o Renan pedir — o `main` é o que está **publicado** no celular dele (GitHub Pages).
+- **Nunca** rode comandos que alterem o banco do Supabase sem plano aprovado. Para o banco, entregue o SQL para o Renan rodar e explique cada linha.
+- Os dados financeiros são reais. Qualquer mudança que mexa na estrutura dos dados salvos (`S`) precisa de **migração** (ver B6) e ser explicada com cuidado.
+
+---
+
+## B. CONTEXTO TÉCNICO DO PROJETO
+
+### B1. O que é
+**Finance Control** — app de finanças pessoais (e do casal) em português, feito para celular. É uma **PWA** (site que pode ser instalado na tela inicial). Funcionalidades: contas bancárias, receitas, despesas, transferências, cartões de crédito com faturas e parcelamento, contas a pagar/recorrentes, orçamento, dois dias de recebimento por mês (padrão 10 e 25), planejamento, relatórios, visões Pessoal/Profissional/Consolidado, compartilhamento de resumo com o parceiro(a) ("Casal"), 6 paletas de cor com modo claro/escuro.
+
+### B2. Tecnologia
+- **HTML + CSS + JavaScript puro** (sem framework, sem etapa de "build", sem `npm`).
+- **Supabase** (via CDN `@supabase/supabase-js@2`): login com e-mail/senha e armazenamento na nuvem.
+- **GitHub Pages**: publica automaticamente o branch `main`. Endereço provável: `https://renans01silva.github.io/finance-/`.
+- Fonte: Manrope (Google Fonts).
+
+### B3. Arquivos
+| Arquivo | Papel |
+|---|---|
+| `index.html` | O app inteiro (≈2.150 linhas), dividido em blocos — ver B4 |
+| `config.js` | URL do Supabase e chave **publishable** (pública por natureza; a segurança vem do RLS — ver `docs/SUPABASE.md`) |
+| `manifest.webmanifest` | Dados da PWA (nome, ícones, cores) |
+| `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Ícones |
+| `docs/` | Documentação (glossário, Supabase) |
+| `CHANGELOG.md` | Diário de alterações |
+
+### B4. Mapa do `index.html` (procure pelos comentários; números de linha mudam)
+1. **`<style>`** — todo o CSS. Cores sempre por variáveis CSS (`var(--pri)` etc.).
+2. **Script "temas (design tokens)"** — exporta `window.FCT`. Paletas (`azul`, `verde`, `roxo`, `grafite`, `marinho`, `claro`) × modos (`auto`, `light`, `dark`). Também calcula contraste (WCAG).
+3. **Script "motor financeiro"** — exporta `window.FC` (usado como `E` no app). Só lógica, sem tela: funções `E.addIncome`, `E.addExpense`, `E.invoiceFor`, `E.invoices`, `E.payInvoice`, `E.accountBalance`, `E.monthSummary`, `E.plan*`, `E.migrate`, `E.couple*` etc. Escrito para também rodar no Node (`module.exports`), o que permite testes automáticos no futuro.
+4. **Script do app (telas)** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov`, `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
+
+### B5. Regras de negócio que NUNCA podem ser quebradas
+- **Dinheiro sempre em centavos inteiros** (`amountCents`), nunca número com vírgula. Converter com `E.toCents`, exibir com `E.brl`. Dividir parcelas com `E.splitCents` (não perde centavo).
+- **Nunca apagar lançamento**: usar `E.cancel` (status `cancelled`). Toda mudança registra `history`.
+- Lançamento só vira "pago" por `E.confirm`. Compra no cartão é paga **pela fatura** (`E.payInvoice`), e pagar fatura **não** é nova despesa.
+- Datas são texto `AAAA-MM-DD`. Usar as funções `E.addMonths`, `E.addDays` etc.
+- Dias de fechamento/vencimento de cartão e dias de recebimento: entre 1 e 28.
+- Cores: só pelos tokens de tema — nada de cor fixa espalhada.
+- Texto vindo do usuário exibido na tela sempre passa por `esc()` (evita injeção de código).
+- Textos da interface em português, tom simples e amigável.
+
+### B6. Dados e sincronização
+- Estado principal `S` (objeto JSON): `schema`, `profile`, `settings.payDays`, `accounts`, `cards`, `categories`, `tx` (lançamentos), `purchases` (compras no cartão), `budgets`, `recurrences`, `plan`, `invoiceFund`, `prefs`, `log`.
+- **Migração**: ao mudar a estrutura de `S`, atualizar `E.migrate` (e o número `schema`) para converter dados antigos sem perder nada.
+- Armazenamento local (`localStorage`): `fc_v1` (dados), `fc_pref` (aparência), `fc_v1_pre2` (cópia antes da migração), `fc_dup_undo`, `fc_cards_undo` (desfazer). `sessionStorage` `fc_hide` (ocultar saldo).
+- Nuvem: tabela `app_state` (1 linha por usuário com todo o `S`). Envio ~0,7 s após salvar, com controle de **versão** (se outro aparelho salvou antes, baixa a versão mais recente). Cada alteração guarda a versão anterior em `app_state_history` (últimas 50).
+- Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`.
+- Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
+
+### B7. Como testar
+- Não há testes automáticos ainda. Para conferir mudanças: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** do merge.
+- Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console.
+
+### B8. Git e publicação
+- Trabalhar sempre em branch separado (ex.: `claude/...`). Publicar = fazer *merge* no `main` (via Pull Request), o que atualiza o GitHub Pages em ~1–2 minutos.
+- Mensagens de commit em português, descrevendo o que e por quê.
