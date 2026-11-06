@@ -37,10 +37,18 @@ Todas as tabelas estão com a **proteção RLS ligada** e com regras que deixam 
 
 ## Pendências / pontos de atenção
 
-1. **Confirmação de e-mail (importante para o Casal).** *Status: confirmado DESLIGADO (06/11/2026). Plano: ligar depois que a esposa do Renan criar a conta dela.* O Casal libera o resumo pelo **e-mail** do convidado. Se a confirmação de e-mail estiver desligada, alguém poderia criar uma conta com o e-mail de outra pessoa (sem ter acesso à caixa de entrada) e ver um resumo compartilhado com ela. **Verificar:** Supabase → *Authentication* → *Sign In / Providers* → *Email* → **"Confirm email"** deve estar **ligado**.
+1. ✅ **Cadastro público fechado** — a chave *"Allow new users to sign up"* (Authentication → Sign In / Providers → User Signups) está **desligada**: ninguém de fora consegue criar conta, nem com o e-mail de outra pessoa. Por isso o *"Confirm email"* (também desligado) **não é necessário**. Contas novas são criadas pelo Renan no painel (ver "Como criar a conta de alguém" abaixo).
 2. ✅ **Backup automático (trigger) ativo** — confirmado em 06/11/2026.
 3. ✅ **Site URL** (Authentication → URL Configuration) = `https://finance-renan.pages.dev` *(corrigido em 06/11/2026; antes era `http://localhost:3000`)* — é para onde levam os links dos e-mails (confirmação de conta, recuperação de senha).
 4. O app ainda **não tem botão** para restaurar uma versão de `app_state_history`; hoje isso seria feito manualmente no Supabase (com ajuda do Claude).
+
+## Como criar a conta de alguém (cadastro público fechado)
+1. Supabase → projeto **finance-control** → **Authentication** → **Users**.
+2. **Add user** → **Create new user** (não usar "Send invitation": o app não trata esse link).
+3. Preencher **Email** e **Password** (mín. 6 caracteres, escolhida pela pessoa — o app ainda não tem tela de trocar senha) e deixar **Auto Confirm User** ligado.
+4. **Create user**. A pessoa entra pelo botão **"Entrar"** do app (não "Criar minha conta").
+
+Usuários atuais (06/11/2026): Renan e a esposa (`eduardafmaia@hotmail.com`, criada pelo painel).
 
 ## Chaves e ligações entre tabelas (06/11/2026)
 | Tabela | Chave principal | Observação |

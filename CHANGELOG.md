@@ -9,6 +9,14 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
+## [06/11/2026] — Conta da esposa (sem mudança no app)
+
+### Adicionado
+- Conta da esposa do Renan criada pelo painel do Supabase (o cadastro pelo app está fechado de propósito, por segurança).
+- `docs/SUPABASE.md`: passo a passo "Como criar a conta de alguém" e registro de que o cadastro público está fechado — por isso o "Confirm email" deixou de ser pendência.
+
+---
+
 ## [06/11/2026] — Versão v3 no ar (código organizado + correção da barra)
 
 > Publicada em Produção no Cloudflare (`finance-site-v3.zip`), depois de testada na versão prévia `teste.finance-renan.pages.dev`. Conferido no celular: login, dados e barra legível.

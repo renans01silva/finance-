@@ -59,4 +59,5 @@
 - **Chave primária (primary key)** — a coluna que identifica cada linha de forma única, como o CPF de uma pessoa.
 - **Chave estrangeira (foreign key)** — coluna que "aponta" para uma linha de outra tabela (ex.: os dados apontam para o usuário dono).
 - **ON DELETE CASCADE** — regra "efeito dominó": se o item principal for apagado, tudo o que aponta para ele é apagado junto.
+- **Cadastro público (sign up)** — permitir que qualquer pessoa crie conta sozinha. No app está **fechado**: só o Renan cria contas, pelo painel do Supabase.
 - **`user_id` / UUID** — código único que identifica cada usuário.

@@ -106,6 +106,7 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - **Migração**: ao mudar a estrutura de `S`, atualizar `E.migrate` (e o número `schema`) para converter dados antigos sem perder nada.
 - Armazenamento local (`localStorage`): `fc_v1` (dados), `fc_pref` (aparência), `fc_v1_pre2` (cópia antes da migração), `fc_dup_undo`, `fc_cards_undo` (desfazer). `sessionStorage` `fc_hide` (ocultar saldo).
 - Nuvem: tabela `app_state` (1 linha por usuário com todo o `S`). Envio ~0,7 s após salvar, com controle de **versão** (se outro aparelho salvou antes, baixa a versão mais recente). Cada alteração guarda a versão anterior em `app_state_history` (últimas 50).
+- **Contas de usuário:** o cadastro público está **fechado** no Supabase ("Allow new users to sign up" desligado). O botão "Criar minha conta" do app mostra "Signups not allowed". Contas novas são criadas pelo Renan no painel (passo a passo em `docs/SUPABASE.md`).
 - Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`. **O app não envia e-mail de convite**: o convite só fica registrado no banco, e o par precisa criar conta com o mesmo e-mail e abrir a tela Casal para aceitar.
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
