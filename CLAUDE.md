@@ -49,7 +49,8 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 3. Faça o commit com mensagem clara em português e envie para o branch de trabalho.
 
 ### A5. Regras de segurança do trabalho
-- **Nunca** envie nada direto para o branch `main` sem o Renan pedir — o `main` é o que está **publicado** no celular dele (GitHub Pages).
+- **Nunca** envie nada direto para o branch `main` sem o Renan pedir.
+- **Nunca** publique uma versão nova do app sem o Renan aprovar — o que está no Cloudflare é o que ele (e a esposa) usam no celular.
 - **Nunca** rode comandos que alterem o banco do Supabase sem plano aprovado. Para o banco, entregue o SQL para o Renan rodar e explique cada linha.
 - Os dados financeiros são reais. Qualquer mudança que mexa na estrutura dos dados salvos (`S`) precisa de **migração** (ver B6) e ser explicada com cuidado.
 
@@ -63,7 +64,8 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 ### B2. Tecnologia
 - **HTML + CSS + JavaScript puro** (sem framework, sem etapa de "build", sem `npm`).
 - **Supabase** (via CDN `@supabase/supabase-js@2`): login com e-mail/senha e armazenamento na nuvem.
-- **GitHub Pages**: publica automaticamente o branch `main`. Endereço provável: `https://renans01silva.github.io/finance-/`.
+- **Hospedagem: Cloudflare Pages**, projeto `finance-renan` → **https://finance-renan.pages.dev**. Publicação manual: envio de um `.zip` no painel do Cloudflare (não está ligado ao Git).
+- **GitHub**: a conta `renans01silva` foi **suspensa em 06/11/2026** (pedido de revisão feito ao suporte). Enquanto isso, não há push nem GitHub Pages; o código é guardado em `.zip` de backup. O antigo endereço `renans01silva.github.io/finance-/` está fora do ar.
 - Fonte: Manrope (Google Fonts).
 
 ### B3. Arquivos
@@ -97,13 +99,15 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 - **Migração**: ao mudar a estrutura de `S`, atualizar `E.migrate` (e o número `schema`) para converter dados antigos sem perder nada.
 - Armazenamento local (`localStorage`): `fc_v1` (dados), `fc_pref` (aparência), `fc_v1_pre2` (cópia antes da migração), `fc_dup_undo`, `fc_cards_undo` (desfazer). `sessionStorage` `fc_hide` (ocultar saldo).
 - Nuvem: tabela `app_state` (1 linha por usuário com todo o `S`). Envio ~0,7 s após salvar, com controle de **versão** (se outro aparelho salvou antes, baixa a versão mais recente). Cada alteração guarda a versão anterior em `app_state_history` (últimas 50).
-- Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`.
+- Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`. **O app não envia e-mail de convite**: o convite só fica registrado no banco, e o par precisa criar conta com o mesmo e-mail e abrir a tela Casal para aceitar.
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- Não há testes automáticos ainda. Para conferir mudanças: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** do merge.
+- Não há testes automáticos ainda. Para conferir mudanças: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** de publicar.
 - Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console.
 
 ### B8. Git e publicação
-- Trabalhar sempre em branch separado (ex.: `claude/...`). Publicar = fazer *merge* no `main` (via Pull Request), o que atualiza o GitHub Pages em ~1–2 minutos.
-- Mensagens de commit em português, descrevendo o que e por quê.
+- Trabalhar sempre em branch separado (ex.: `claude/...`). Mensagens de commit em português, descrevendo o que e por quê.
+- **Publicar (hoje):** gerar um `.zip` com os arquivos do projeto (`git archive --format=zip HEAD`), enviar ao Renan e guiá-lo no Cloudflare: **Workers & Pages** → `finance-renan` → **Create deployment** → tocar no link "arquivo" (no iPhone, a área de arrastar não funciona) → **Implantar site**.
+- Depois de publicar, pedir ao Renan para testar no celular (login + dados aparecendo).
+- Se o GitHub voltar: decidir com o Renan se conecta o Cloudflare ao repositório (publicação automática) ou mantém o envio manual.

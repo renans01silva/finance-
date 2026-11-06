@@ -34,6 +34,15 @@
 - **GitHub Pages** — serviço do GitHub que transforma o repositório em um site (`...github.io`).
 - **Changelog** — diário das alterações do projeto.
 
+## Hospedagem (onde o site fica no ar)
+- **Hospedagem** — o "terreno" na internet onde o site fica guardado para qualquer um abrir.
+- **Cloudflare Pages** — serviço gratuito que hospeda o app hoje (`finance-renan.pages.dev`).
+- **Deploy / Implantar** — publicar uma versão do site, colocando-a no ar.
+- **Domínio** — o endereço do site (ex.: `finance-renan.pages.dev`). Domínios próprios (`meusite.com.br`) são pagos e opcionais.
+- **.zip** — um "pacote" que junta vários arquivos em um só, para enviar ou guardar.
+- **404** — código de "página não encontrada": não existe nada naquele endereço.
+- **Conta suspensa** — conta bloqueada pela plataforma; só o suporte dela pode reativar.
+
 ## Supabase e banco de dados
 - **Supabase** — serviço na nuvem que guarda os dados e cuida do login.
 - **Banco de dados** — lugar organizado para guardar informações em tabelas.

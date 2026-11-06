@@ -3,7 +3,7 @@
 App de finanças pessoais (e do casal), em português, feito para o celular.
 Funciona no navegador e pode ser **instalado na tela inicial** (PWA).
 
-🔗 **Acesso:** https://renans01silva.github.io/finance-/
+🔗 **Acesso:** https://finance-renan.pages.dev
 
 ## O que o app faz
 - **Início:** saldo disponível, quanto vai sobrar no mês e alertas.
@@ -34,4 +34,9 @@ Os dados ficam no aparelho e são sincronizados com o Supabase, com login por e-
 - [`docs/GLOSSARIO.md`](docs/GLOSSARIO.md): termos técnicos explicados.
 
 ## Publicação
-Tudo o que entra no branch `main` é publicado automaticamente pelo **GitHub Pages** em cerca de 1 a 2 minutos.
+O app está hospedado no **Cloudflare Pages** (projeto `finance-renan`).
+Para publicar uma nova versão: gerar um `.zip` com os arquivos do projeto e enviá-lo no painel do Cloudflare
+(**Workers & Pages** → `finance-renan` → **Create deployment**).
+
+> Até 06/11/2026 o app ficava no GitHub Pages. A conta do GitHub foi suspensa nesse dia
+> (pedido de revisão em andamento), e o app foi movido para o Cloudflare.

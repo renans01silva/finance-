@@ -37,9 +37,10 @@ Todas as tabelas estão com a **proteção RLS ligada** e com regras que deixam 
 
 ## Pendências / pontos de atenção
 
-1. **Confirmação de e-mail (importante para o Casal).** O Casal libera o resumo pelo **e-mail** do convidado. Se a confirmação de e-mail estiver desligada, alguém poderia criar uma conta com o e-mail de outra pessoa (sem ter acesso à caixa de entrada) e ver um resumo compartilhado com ela. **Verificar:** Supabase → *Authentication* → *Sign In / Providers* → *Email* → **"Confirm email"** deve estar **ligado**.
+1. **Confirmação de e-mail (importante para o Casal).** *Status: confirmado DESLIGADO (06/11/2026). Plano: ligar depois que a esposa do Renan criar a conta dela.* O Casal libera o resumo pelo **e-mail** do convidado. Se a confirmação de e-mail estiver desligada, alguém poderia criar uma conta com o e-mail de outra pessoa (sem ter acesso à caixa de entrada) e ver um resumo compartilhado com ela. **Verificar:** Supabase → *Authentication* → *Sign In / Providers* → *Email* → **"Confirm email"** deve estar **ligado**.
 2. **Confirmar se o backup automático (trigger) está ativo** — rodar a consulta abaixo no SQL Editor.
-3. O app ainda **não tem botão** para restaurar uma versão de `app_state_history`; hoje isso seria feito manualmente no Supabase (com ajuda do Claude).
+3. **Site URL** (Authentication → URL Configuration) deve ser `https://finance-renan.pages.dev` — é para onde levam os links dos e-mails (confirmação de conta, recuperação de senha).
+4. O app ainda **não tem botão** para restaurar uma versão de `app_state_history`; hoje isso seria feito manualmente no Supabase (com ajuda do Claude).
 
 ### Consulta: triggers e chaves (só leitura)
 ```sql
@@ -77,4 +78,4 @@ order by 1, 2;
 2. **Ao entrar:** baixa a linha do usuário em `app_state`. Se não existir, cria.
 3. **Ao salvar:** ~0,7 s depois, envia tudo para `app_state` com `version + 1`. Se outro aparelho tiver salvo antes (versão diferente), o app baixa a versão mais nova e avisa.
 4. **Sem internet:** guarda no aparelho e envia quando a conexão voltar.
-5. **Casal:** cria convites em `shares`, aceita com `accept_share` e publica um resumo em `summaries`.
+5. **Casal:** cria convites em `shares`, aceita com `accept_share` e publica um resumo em `summaries`. **Nenhum e-mail é enviado no convite**: o par precisa criar conta com o e-mail convidado e abrir a tela Casal.

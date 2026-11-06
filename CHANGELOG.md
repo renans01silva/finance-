@@ -2,14 +2,27 @@
 
 Aqui ficam registradas, em linguagem simples, **todas** as mudanças do Finance Control.
 
-- **Não publicado** = está pronto num branch, mas ainda não foi para o `main` (o app no celular ainda não mudou).
-- Cada versão publicada ganha a data do dia em que foi para o `main`.
+- **Não publicado** = a mudança está pronta, mas ainda não foi enviada ao Cloudflare (o app no celular ainda não mudou).
+- Cada versão publicada ganha a data do dia em que foi ao ar.
 
 Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já existia mudou) · **Corrigido** (erro consertado) · **Removido** · **Segurança**.
 
 ---
 
-## [Não publicado]
+## [06/11/2026] — App movido para o Cloudflare Pages
+
+### Alterado
+- O app agora está em **https://finance-renan.pages.dev** (Cloudflare Pages).
+  Motivo: a conta do GitHub foi suspensa, o que tirou do ar o endereço antigo (`renans01silva.github.io/finance-/`).
+- O código do app **não mudou**: é a mesma versão de antes. Os dados continuam no Supabase e voltaram normalmente ao fazer login.
+- Documentação (`README.md`, `CLAUDE.md`, `docs/SUPABASE.md`) atualizada com o endereço novo e o jeito novo de publicar (envio de `.zip`).
+
+### Adicionado
+- `docs/GLOSSARIO.md`: termos novos (Cloudflare Pages, deploy, .zip, 404, domínio).
+
+---
+
+## [Não publicado no GitHub] — documentação inicial
 
 ### Adicionado
 - `CLAUDE.md`: instruções que o Claude Code lê antes de programar (contexto do projeto, regras de negócio e o "modo professor" com plano obrigatório antes de cada mudança).
