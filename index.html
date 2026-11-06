@@ -135,7 +135,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
 .stats4{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.stats4 .glass{padding:14px 16px}.stats4 .t{font-size:12.5px;color:var(--mut);font-weight:700}.stats4 .v{font-size:20px;font-weight:800;letter-spacing:-.6px;margin-top:6px}
 .two2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pals{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pal{border:2px solid var(--line);background:var(--card);color:var(--tx);border-radius:20px;padding:12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px}.pal.on{border-color:var(--link)}
-.orcq{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:18px;color:var(--tx);cursor:pointer}.orcq .sq{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none}.orcq .t{flex:1;display:flex;flex-direction:column;gap:2px}.orcq small{color:var(--mut);font-weight:600;font-size:12px}.orcq .chev{color:var(--mut)}.orcq.col{flex-direction:column;align-items:stretch;gap:12px}.orcq .top{display:flex;align-items:center;gap:12px}.orcq .top b{flex:1;font-size:16px}.orcq .two3{display:grid;grid-template-columns:1fr 1fr;gap:10px}.orcq .two3>div{background:var(--soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.orcq .two3 b{font-size:17px}.catsum .row .a{font-size:15px;border:0;background:none;padding:0;box-shadow:none;min-width:92px;text-align:right;flex:none}.catsum .row .m small{white-space:nowrap}.pal .ck{opacity:0;display:inline-grid}.pal.on .ck{opacity:1;color:var(--link)}.pal .ck svg.i{width:18px;height:18px}
+.orcq{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:18px;color:var(--tx);cursor:pointer}.orcq .sq{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none}.orcq .t{flex:1;display:flex;flex-direction:column;gap:2px}.orcq small{color:var(--mut);font-weight:600;font-size:12px}.orcq .chev{color:var(--mut)}.orcq.col{flex-direction:column;align-items:stretch;gap:12px}.orcq .top{display:flex;align-items:center;gap:12px}.orcq .top b{flex:1;font-size:16px}.orcq .two3{display:grid;grid-template-columns:1fr 1fr;gap:10px}.orcq .two3>div{background:var(--soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.orcq .two3 b{font-size:17px}.ctools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-4px 0 14px}.ctools .clear{display:inline-flex;align-items:center;gap:6px;background:var(--badbg);color:var(--bad);border:0;border-radius:999px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer}.ctools .clear svg.i{width:15px;height:15px}.ctools .link svg.i{width:15px;height:15px;margin-right:4px;vertical-align:-3px}.catsum .row .a{font-size:15px;border:0;background:none;padding:0;box-shadow:none;min-width:92px;text-align:right;flex:none}.catsum .row .m small{white-space:nowrap}.pal .ck{opacity:0;display:inline-grid}.pal.on .ck{opacity:1;color:var(--link)}.pal .ck svg.i{width:18px;height:18px}
 .pal .sw{display:flex;height:38px;border-radius:12px;overflow:hidden}.pal .sw i{flex:1}.pal b{font-size:14px;font-weight:800;display:flex;justify-content:space-between;align-items:center}.pal small{color:var(--mut);font-size:12px;font-weight:500;line-height:1.3}
 .pill.pri{background:var(--soft);color:var(--link)}
 .note{background:var(--seg);border-radius:16px;padding:12px 14px;font-size:13.5px;font-weight:600;line-height:1.5;margin-top:12px}.note.warn{background:var(--warnbg);color:var(--warn)}.note.bad{background:var(--badbg);color:var(--bad)}
@@ -898,7 +898,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
 
   // ───── 3) Orçamento por recebimento (plano de cada período)
   // s.plan = { income:[previsto dia A, previsto dia B], items:[{id,slot,name,kind,amountCents,dueDay,categoryId,active}], done:{'pk|itemId':true} }
-  E.PLAN_KINDS = { fixed: 'Conta fixa', variable: 'Orçamento variável', reserve: 'Reserva de caixa', invest: 'Investimento', saving: 'Poupança' };
+  E.PLAN_KINDS = { fixed: 'Conta fixa', variable: 'Orçamento variável', card: 'Cartão (fatura)', reserve: 'Reserva de caixa', invest: 'Investimento', saving: 'Poupança' };
   const isAlloc = (k) => k === 'reserve' || k === 'invest' || k === 'saving';
   const nrm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   const planOf = (s) => { if (!s.plan) s.plan = { income: [0, 0], items: [], done: {} }; return s.plan; };
@@ -908,8 +908,8 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     if (!(o.slot === 1 || o.slot === 2)) throw new Error('Escolha o recebimento (dia ' + E.cfg(s).payDays[0] + ' ou ' + E.cfg(s).payDays[1] + ').');
     if (!E.PLAN_KINDS[o.kind]) throw new Error('Escolha o tipo do item.');
     if (!o.name || !o.name.trim()) throw new Error('Dê um nome para o item.');
-    if (o.kind === 'fixed' && o.dueDay != null && o.dueDay !== '' && !(o.dueDay >= 1 && o.dueDay <= 31)) throw new Error('O dia do vencimento deve estar entre 1 e 31.');
-    const it = { id: E.uid(), slot: o.slot, name: o.name.trim(), kind: o.kind, amountCents: o.amountCents, dueDay: o.kind === 'fixed' && o.dueDay ? +o.dueDay : null, categoryId: o.categoryId || null, active: true };
+    if ((o.kind === 'fixed' || o.kind === 'card') && o.dueDay != null && o.dueDay !== '' && !(o.dueDay >= 1 && o.dueDay <= 31)) throw new Error('O dia do vencimento deve estar entre 1 e 31.');
+    const it = { id: E.uid(), slot: o.slot, name: o.name.trim(), kind: o.kind, amountCents: o.amountCents, dueDay: (o.kind === 'fixed' || o.kind === 'card') && o.dueDay ? +o.dueDay : null, categoryId: o.categoryId || null, active: true };
     planOf(s).items.push(it); return it;
   };
   E.planEdit = (s, id, patch) => {
@@ -917,7 +917,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     if (patch.amountCents != null) needAmount(patch.amountCents);
     if (patch.name != null && !patch.name.trim()) throw new Error('Dê um nome para o item.');
     ['name', 'kind', 'amountCents', 'slot', 'dueDay', 'categoryId', 'active'].forEach((k) => { if (patch[k] !== undefined) it[k] = k === 'name' ? patch[k].trim() : patch[k]; });
-    if (it.kind !== 'fixed') it.dueDay = null;
+    if (it.kind !== 'fixed' && it.kind !== 'card') it.dueDay = null;
     return it;
   };
   // tirar do plano nunca apaga lançamentos: o item só fica inativo (os gastos continuam existindo)
@@ -929,12 +929,13 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     const v = (slot, name, cents, cat) => ({ slot, name, kind: 'variable', amountCents: cents, dueDay: null, categoryId: cat });
     const a = (slot, name, kind, cents) => ({ slot, name, kind, amountCents: cents, dueDay: null, categoryId: null });
     return { income: [378792, 267643], items: [
-      f(1, 'Aluguel', 150000, 10, 'e_Moradia'), f(1, 'AABB Tênis', 7000, 10, 'e_Lazer'), f(1, 'Jiu-jítsu', 18000, 10, 'e_Saúde'), f(1, 'Inglês', 21586, 10, 'e_Educação'),
-      f(1, 'Carro', 22500, 10, 'e_Veículos'), f(1, 'Internet', 10000, 15, 'e_Moradia'), f(1, 'Dízimo', 5000, 15, 'e_Outros'), f(1, 'Conta de luz', 30000, 23, 'e_Moradia'), f(1, 'Funcional', 17550, 25, 'e_Saúde'),
-      v(1, 'Gasolina', 20000, 'e_Transporte'), v(1, 'Mercado', 25000, 'e_Alimentação'), v(1, 'Farmácia', 10000, 'e_Saúde'), v(1, 'Lazer', 15000, 'e_Lazer'), v(1, 'Cabelo', 12500, 'e_Outros'), v(1, 'Terapia', 10000, 'e_Saúde'),
-      f(2, 'Telefone', 17823, 26, 'e_Moradia'), f(2, 'Água', 12000, 28, 'e_Moradia'), a(2, 'Reserva para os dias 1 a 9 do mês seguinte', 'reserve', 50000),
-      v(2, 'Gasolina', 20000, 'e_Transporte'), v(2, 'Mercado', 25000, 'e_Alimentação'), v(2, 'Farmácia', 10000, 'e_Saúde'), v(2, 'Lazer', 15000, 'e_Lazer'),
-      v(2, 'Manutenção do carro', 11676, 'e_Veículos'), v(2, 'Seguro', 26700, 'e_Veículos'), a(2, 'FII', 'invest', 21000), a(2, 'Reserva financeira', 'saving', 63900) ] };
+      f(1, 'Aluguel', 150000, 10, 'e_Moradia'), f(1, 'AABB Tênis', 7000, 10, 'e_Lazer'), f(1, 'Jiu-jítsu', 18000, 10, 'e_Saúde'), f(1, 'Inglês', 21586, 10, 'e_Educação'), f(1, 'Carro', 22500, 10, 'e_Veículos'),
+      { slot: 1, name: 'Cartão reservado', kind: 'card', amountCents: 49200, dueDay: 13, categoryId: null },
+      f(1, 'Internet', 10000, 15, 'e_Moradia'), f(1, 'Dízimo', 5000, 16, 'e_Outros'), f(1, 'Conta de luz', 30000, 23, 'e_Moradia'),
+      v(1, 'Mercado', 50000, 'e_Alimentação'), v(1, 'Gasolina - parcela 1', 15506, 'e_Transporte'),
+      f(2, 'Funcional', 17550, 25, 'e_Saúde'), f(2, 'Telefone', 18202, 26, 'e_Moradia'), f(2, 'Água', 12000, 27, 'e_Moradia'),
+      v(2, 'Gasolina - parcela 2', 24494, 'e_Transporte'), v(2, 'Farmácia', 20000, 'e_Saúde'), v(2, 'Lazer', 35000, 'e_Lazer'), v(2, 'Cabelo', 12500, 'e_Outros'), v(2, 'Terapia', 10000, 'e_Saúde'),
+      v(2, 'Manutenção do carro', 15000, 'e_Veículos'), f(2, 'Seguro', 26700, null, 'e_Veículos'), a(2, 'FII', 'invest', 12000), a(2, 'Reserva financeira', 'saving', 63900) ] };
   };
   // importa um modelo (ex.: a planilha do usuário). Só em plano vazio, para nunca duplicar nem sobrescrever.
   E.planImport = (s, tpl) => {
@@ -946,38 +947,44 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
   const inPlanPeriod = (t, pk, range) => t.fund ? t.fund === pk : (planDate(t) >= range.start && planDate(t) <= range.end);
   // regras de associação (nesta ordem): 1) item escolhido no lançamento; 2) nome do item na descrição; 3) categoria, se for única entre os orçamentos variáveis do período
   E.planMatch = (s, pk, ctx = 'all') => {
-    const q = E.parsePk(pk), range = E.periodRange(s, pk), items = E.planItems(s, q.slot).filter((i) => !isAlloc(i.kind));
+    const q = E.parsePk(pk), range = E.periodRange(s, pk), all = E.planItems(s, q.slot), hasCard = all.some((i) => i.kind === 'card'), items = all.filter((i) => i.kind === 'fixed' || i.kind === 'variable');
     const txs = live(s, ctx).filter((t) => t.kind === 'expense' && inPlanPeriod(t, pk, range));
-    const owner = {}, byName = items.slice().sort((a, b) => b.name.length - a.name.length);
+    const owner = {}, covered = {}, byName = items.slice().sort((a, b) => b.name.length - a.name.length);
     const varCat = {}; items.filter((i) => i.kind === 'variable' && i.categoryId).forEach((i) => { varCat[i.categoryId] = (varCat[i.categoryId] || []).concat(i); });
     txs.forEach((t) => {
       let it = t.planItemId && items.find((i) => i.id === t.planItemId);
       if (!it) { const d = nrm(t.desc); it = byName.find((i) => nrm(i.name).length >= 3 && d.includes(nrm(i.name))); }
       if (!it && t.categoryId && varCat[t.categoryId] && varCat[t.categoryId].length === 1) it = varCat[t.categoryId][0];
-      if (it) owner[t.id] = it.id;
+      if (it && hasCard && t.cardId && t.planItemId !== it.id) it = null;   // compra no cartão sem item escolhido fica por conta do "Cartão reservado"
+      if (it) owner[t.id] = it.id; else if (hasCard && t.cardId) covered[t.id] = true;
     });
-    return { txs, owner };
+    return { txs, owner, covered };
   };
   E.planPeriod = (s, pk, ctx = 'all') => {
-    const q = E.parsePk(pk), pl = planOf(s), range = E.periodRange(s, pk), { txs, owner } = E.planMatch(s, pk, ctx);
+    const q = E.parsePk(pk), pl = planOf(s), range = E.periodRange(s, pk), { txs, owner, covered } = E.planMatch(s, pk, ctx);
     const val = (t) => t.status === 'paid' && !t.cardId ? (t.paidCents || t.amountCents) : t.amountCents;
     const isPaid = (t) => t.cardId || t.status === 'paid';
     const rows = E.planItems(s, q.slot).map((it) => {
-      const mine = txs.filter((t) => owner[t.id] === it.id);
-      const paid = mine.filter(isPaid).reduce((a, t) => a + val(t), 0), pending = mine.filter((t) => !isPaid(t)).reduce((a, t) => a + t.amountCents, 0);
+      const mine = it.kind === 'card' ? [] : txs.filter((t) => owner[t.id] === it.id);
+      let paid = mine.filter(isPaid).reduce((a, t) => a + val(t), 0), pending = mine.filter((t) => !isPaid(t)).reduce((a, t) => a + t.amountCents, 0);
       let status, committed, done = !!pl.done[pk + '|' + it.id];
       if (isAlloc(it.kind)) { status = done ? 'done' : 'todo'; committed = it.amountCents; }
+      else if (it.kind === 'card') {
+        const inv = s.cards.filter((c) => ctx === 'all' || c.context === ctx).flatMap((c) => E.invoices(s, c.id)).filter((i) => { const f = E.invoiceFundOf(s, i.cardId, i.dueDate); return f ? f === pk : (i.dueDate >= range.start && i.dueDate <= range.end); });
+        paid = inv.reduce((a, i) => a + Math.min(i.paidCents, Math.max(i.totalCents, 0)), 0); pending = inv.reduce((a, i) => a + Math.max(i.remainingCents, 0), 0);
+        const u = paid + pending; status = u > it.amountCents ? 'over' : u >= it.amountCents * 0.85 ? 'near' : 'ok'; committed = Math.max(it.amountCents, u);
+      }
       else if (it.kind === 'fixed') { status = pending > 0 ? 'pending' : paid > 0 ? 'paid' : 'none'; committed = paid + pending > 0 ? paid + pending : it.amountCents; }
       else { const u = paid + pending; status = u > it.amountCents ? 'over' : u >= it.amountCents * 0.85 ? 'near' : 'ok'; committed = Math.max(it.amountCents, u); }
       return { item: it, plannedCents: it.amountCents, paidCents: paid, pendingCents: pending, usedCents: paid + pending, committedCents: committed, status, done, txIds: mine.map((t) => t.id) };
     });
     const sum = (f, k) => rows.filter(f).reduce((a, r) => a + r[k], 0), kindIs = (k) => (r) => r.item.kind === k;
-    const off = txs.filter((t) => !owner[t.id]), offCents = off.reduce((a, t) => a + (isPaid(t) ? val(t) : t.amountCents), 0);
+    const off = txs.filter((t) => !owner[t.id] && !covered[t.id]), offCents = off.reduce((a, t) => a + (isPaid(t) ? val(t) : t.amountCents), 0);
     const sm = E.periodSummary(s, pk, ctx), incomePlanned = pl.income[q.slot - 1] || 0, incomeBase = incomePlanned || sm.expectedCents;
     const plannedTotal = sum(() => true, 'plannedCents'), committedTotal = sum(() => true, 'committedCents');
     return {
       pk, range, rows, off, offCents, incomePlanned, incomeRegistered: sm.expectedCents, incomeBase,
-      fixedCents: sum(kindIs('fixed'), 'plannedCents'), variableCents: sum(kindIs('variable'), 'plannedCents'), allocCents: sum((r) => isAlloc(r.item.kind), 'plannedCents'),
+      fixedCents: sum(kindIs('fixed'), 'plannedCents'), variableCents: sum(kindIs('variable'), 'plannedCents'), cardCents: sum(kindIs('card'), 'plannedCents'), allocCents: sum((r) => isAlloc(r.item.kind), 'plannedCents'),
       plannedTotal, committedTotal, paidTotal: sum((r) => !isAlloc(r.item.kind), 'paidCents'),
       balanceCents: incomeBase - plannedTotal,                         // sobra do plano, como na planilha
       realBalanceCents: incomeBase - committedTotal - offCents,         // sobra considerando o que já aconteceu e gastos fora do plano
@@ -1071,6 +1078,95 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     const old = r.amountCents; r.amountCents = cents; let n = 0;
     s.tx.filter((t) => t.recurrenceId === id && t.status === 'pending' && t.dueDate >= today).forEach((t) => { hist(t, `valor: ${E.brl(t.amountCents)} → ${E.brl(cents)} (ajuste da conta mensal)`); t.amountCents = cents; n++; });
     return n;
+  };
+
+  // ───── 6) Atualizar o orçamento com uma nova versão da planilha (sem perder vínculos) + cartões: editar e limpar
+  // Itens iguais mantêm o mesmo id, então contas mensais, lançamentos e marcações continuam ligados. Itens que saíram só ficam inativos.
+  E.planUpdate = (s, tpl, today = E.today()) => {
+    const pl = planOf(s), oldCat = E.planCategoryBudgets(s), olds = pl.items.filter((i) => i.active !== false), claimed = new Set(), changes = [];
+    const find = (n) => {
+      const k = nrm(n.name), free = olds.filter((i) => !claimed.has(i.id));
+      return free.find((i) => nrm(i.name) === k && i.slot === n.slot) || (free.filter((i) => nrm(i.name) === k).length === 1 ? free.find((i) => nrm(i.name) === k) : null) || free.find((i) => i.slot === n.slot && k.startsWith(nrm(i.name) + ' ')) || null;
+    };
+    const day = (sl) => 'dia ' + E.cfg(s).payDays[sl - 1];
+    tpl.items.forEach((n) => {
+      const o = find(n);
+      if (!o) { const it = E.planAdd(s, n); claimed.add(it.id); changes.push({ type: 'novo', name: n.name, text: `${E.brl(n.amountCents)} no ${day(n.slot)}` }); return; }
+      claimed.add(o.id); const d = [];
+      if (o.amountCents !== n.amountCents) d.push(`${E.brl(o.amountCents)} → ${E.brl(n.amountCents)}`);
+      if (o.slot !== n.slot) d.push(`${day(o.slot)} → ${day(n.slot)}`);
+      if ((o.dueDay || null) !== (n.dueDay || null)) d.push(`vencimento ${o.dueDay ? 'dia ' + o.dueDay : 'a definir'} → ${n.dueDay ? 'dia ' + n.dueDay : 'a definir'}`);
+      if (o.kind !== n.kind) d.push(`tipo: ${E.PLAN_KINDS[o.kind]} → ${E.PLAN_KINDS[n.kind]}`);
+      if (o.name !== n.name) d.push(`nome: ${o.name} → ${n.name}`);
+      if (d.length) changes.push({ type: 'alterado', name: n.name, text: d.join(' · ') });
+      Object.assign(o, { name: n.name, kind: n.kind, amountCents: n.amountCents, slot: n.slot, dueDay: (n.kind === 'fixed' || n.kind === 'card') ? (n.dueDay || null) : null, categoryId: n.categoryId || null, active: true });
+    });
+    olds.filter((i) => !claimed.has(i.id)).forEach((i) => { i.active = false; changes.push({ type: 'removido', name: i.name, text: `${E.brl(i.amountCents)} (${day(i.slot)}) sai do orçamento` }); });
+    if (!pl.income[0] && !pl.income[1] && tpl.income) pl.income = tpl.income.slice();
+    // limites por categoria: troca só os que ainda estão como o orçamento antigo calculou (nunca os que você definiu); preenche os vazios
+    const newCat = E.planCategoryBudgets(s), ym0 = today.slice(0, 7);
+    Object.keys(s.budgets).forEach((key) => { const [ym, cat] = key.split('|'); if (ym >= ym0 && oldCat[cat] !== undefined && s.budgets[key] === oldCat[cat]) { if (newCat[cat] === undefined) delete s.budgets[key]; else s.budgets[key] = newCat[cat]; } });
+    E.planFillBudgets(s, ym0, 12);
+    const sync = E.planSyncBills(s, today);
+    return { changes, sync };
+  };
+  // acerta contas mensais e contas a pagar (ainda não pagas) ligadas aos itens do orçamento
+  E.planSyncBills = (s, today = E.today()) => {
+    const byId = {}; planOf(s).items.forEach((i) => { byId[i.id] = i; }); const out = { recurrences: 0, bills: 0, cancelled: 0, created: 0 };
+    s.recurrences.filter((r) => r.planItemId && !r.ended).forEach((r) => {
+      const it = byId[r.planItemId];
+      if (!it || it.active === false || it.kind !== 'fixed' || !it.dueDay) { E.stopRecurring(s, r.id, today); out.cancelled++; return; }
+      if (r.amountCents !== it.amountCents || r.day !== it.dueDay || r.fundSlot !== it.slot || r.desc !== it.name) out.recurrences++;
+      Object.assign(r, { amountCents: it.amountCents, day: it.dueDay, fundSlot: it.slot, categoryId: it.categoryId || r.categoryId, desc: it.name });
+    });
+    const ms = today.slice(0, 7) + '-01';
+    s.tx.filter((t) => t.planItemId && t.kind === 'expense' && t.status === 'pending' && t.dueDate >= ms).forEach((t) => {
+      const it = byId[t.planItemId];
+      if (!it || it.active === false) { t.status = 'cancelled'; hist(t, 'item saiu do orçamento'); out.cancelled++; return; }
+      let ch = false;
+      if (t.amountCents !== it.amountCents) { hist(t, `valor: ${E.brl(t.amountCents)} → ${E.brl(it.amountCents)} (orçamento atualizado)`); t.amountCents = it.amountCents; ch = true; }
+      if (it.kind === 'fixed' && it.dueDay) { const nd = dueIn(t.dueDate.slice(0, 7), it.dueDay); if (nd !== t.dueDate) { if (t.purchaseDate === t.dueDate) t.purchaseDate = nd; t.dueDate = nd; ch = true; } }
+      if (t.fund && E.parsePk(t.fund).slot !== it.slot) { t.fund = E.fundForSlot(s, t.dueDate, it.slot); ch = true; }
+      if (ch) out.bills++;
+    });
+    // quem já usa contas mensais do orçamento ganha as dos itens novos, na mesma conta
+    const ref = s.recurrences.find((r) => r.planItemId && !r.ended);
+    if (ref) { out.created = E.planRecurrences(s, { accountId: ref.accountId, context: ref.context, today }).made.length; }
+    E.generateRecurring(s, today, 12);
+    return out;
+  };
+  // mostra o que mudaria, sem alterar nada
+  E.planPreviewUpdate = (s, tpl, today = E.today()) => E.planUpdate(JSON.parse(JSON.stringify(s)), tpl, today);
+
+  E.editCard = (s, id, o) => {
+    const c = s.cards.find((x) => x.id === id); if (!c) throw new Error('Cartão não encontrado.');
+    if (o.name !== undefined && !String(o.name).trim()) throw new Error('Dê um nome para o cartão.');
+    if (o.limitCents !== undefined && !(o.limitCents >= 0)) throw new Error('Informe um limite válido.');
+    const cd = o.closingDay === undefined ? c.closingDay : o.closingDay, dd = o.dueDay === undefined ? c.dueDay : o.dueDay;
+    if (!(cd >= 1 && cd <= 28 && dd >= 1 && dd <= 28)) throw new Error('Dias de fechamento e vencimento devem estar entre 1 e 28.');
+    if (o.name !== undefined) c.name = String(o.name).trim(); if (o.limitCents !== undefined) c.limitCents = o.limitCents; c.closingDay = cd; c.dueDay = dd; return c;
+  };
+  // o que "Limpar valores" da aba Cartões vai apagar
+  E.previewClearCards = (s) => {
+    const cx = s.tx.filter((t) => t.cardId), pay = s.tx.filter((t) => t.kind === 'invoice_payment' && t.cardRef);
+    return { cards: s.cards.length, purchases: (s.purchases || []).length, installments: cx.filter((t) => t.kind === 'expense' && t.status !== 'cancelled').length, refunds: cx.filter((t) => t.kind === 'refund').length, payments: pay.length, paymentsCents: pay.filter((t) => t.status === 'paid').reduce((a, t) => a + t.amountCents, 0), limitsCents: s.cards.reduce((a, c) => a + (c.limitCents || 0), 0) };
+  };
+  // zera a aba: compras, parcelas, estornos e pagamentos de fatura somem; os cartões continuam cadastrados, com limite zerado.
+  // Devolve um "pacote de desfazer" para o app guardar.
+  E.clearCards = (s) => {
+    const snap = { at: new Date().toISOString(), tx: s.tx.filter((t) => t.cardId || (t.kind === 'invoice_payment' && t.cardRef)), purchases: (s.purchases || []).slice(), invoiceFund: JSON.parse(JSON.stringify(s.invoiceFund || {})), limits: {} };
+    s.cards.forEach((c) => { snap.limits[c.id] = c.limitCents; c.limitCents = 0; });
+    const ids = new Set(snap.tx.map((t) => t.id)); s.tx = s.tx.filter((t) => !ids.has(t.id)); s.purchases = []; s.invoiceFund = {};
+    (s.log = s.log || []).push({ at: snap.at, what: `cartões zerados: ${snap.purchases.length} compras, ${snap.tx.length} lançamentos` });
+    return snap;
+  };
+  E.restoreCards = (s, snap) => {
+    const have = new Set(s.tx.map((t) => t.id)); snap.tx.forEach((t) => { if (!have.has(t.id)) s.tx.push(t); });
+    const hp = new Set((s.purchases || []).map((p) => p.id)); snap.purchases.forEach((p) => { if (!hp.has(p.id)) s.purchases.push(p); });
+    s.invoiceFund = Object.assign({}, snap.invoiceFund, s.invoiceFund || {});
+    s.cards.forEach((c) => { if (snap.limits[c.id] !== undefined && !c.limitCents) c.limitCents = snap.limits[c.id]; });
+    (s.log = s.log || []).push({ at: new Date().toISOString(), what: 'limpeza dos cartões desfeita' });
+    return snap.tx.length;
   };
 
   if (typeof module !== 'undefined') module.exports = E; else root.FC = E;
@@ -1463,16 +1559,16 @@ function periodCard(pk) {
   <div style="height:8px"></div>${stat('Despesas vinculadas', brl(p.linkedCents))}${stat('Pendentes · ' + p.pendingCount, brl(p.pendingCents))}${stat('Pagas · ' + p.paidCount, brl(p.paidCents))}${stat('Saldo projetado', brl(p.projectedCents), p.projectedCents < 0 ? 'neg' : '')}${stat('Saldo disponível', brl(p.availableCents), p.availableCents < 0 ? 'neg' : '')}</div>`;
 }
 // ───── Orçamento por recebimento
-const planKinds = ['fixed', 'variable', 'reserve', 'invest', 'saving'];
-const planGroupTitle = { fixed: 'Contas fixas', variable: 'Orçamentos variáveis', alloc: 'Reservas e investimentos' };
-const planIcon = (k) => ({ fixed: 'receipt', variable: 'cart', reserve: 'wallet', invest: 'chart', saving: 'wallet' }[k]);
+const planKinds = ['fixed', 'variable', 'card', 'reserve', 'invest', 'saving'];
+const planGroupTitle = { fixed: 'Contas fixas', card: 'Cartão de crédito', variable: 'Orçamentos variáveis', alloc: 'Reservas e investimentos' };
+const planIcon = (k) => ({ fixed: 'receipt', variable: 'cart', card: 'card', reserve: 'wallet', invest: 'chart', saving: 'wallet' }[k]);
 const planStatus = (r) => ({ pending: ['A pagar', 'warn'], paid: ['Pago', 'ok'], none: ['Não lançado', ''], over: ['Passou do orçado', 'bad'], near: ['Quase no limite', 'warn'], ok: ['Dentro do orçado', 'ok'], done: ['Separado', 'ok'], todo: ['A separar', ''] }[r.status]);
 const planRow = (r, pk) => {
   const it = r.item, alloc = it.kind === 'reserve' || it.kind === 'invest' || it.kind === 'saving', st = planStatus(r);
   let sub, right, bar = '';
   if (alloc) { sub = E.PLAN_KINDS[it.kind] + ' · ' + st[0]; right = `<button class="pill ${r.done ? '' : 'pri'}" onclick="event.stopPropagation();togglePlanDone('${pk}','${it.id}')">${r.done ? 'Desfazer' : 'Separei'}</button>`; }
   else if (it.kind === 'fixed') { sub = (it.dueDay ? 'Vence dia ' + it.dueDay + ' · ' : '') + st[0] + (r.usedCents && r.usedCents !== it.amountCents ? ' · real ' + brl(r.usedCents) : ''); right = `<div class="a ${r.status === 'paid' ? 'pos' : ''}">${brl(it.amountCents)}</div>`; }
-  else { const left = it.amountCents - r.usedCents, pct = Math.min(100, Math.round(r.usedCents * 100 / it.amountCents)); sub = 'Gasto ' + brl(r.usedCents) + ' de ' + brl(it.amountCents); right = `<div class="a ${left < 0 ? 'bad' : ''}">${left < 0 ? '−' + brl(-left) : brl(left)}<small style="display:block;font-size:11px;font-weight:700;color:var(--mut)">${left < 0 ? 'acima' : 'resta'}</small></div>`; bar = `<div class="bar"><i style="width:${pct}%;${r.status === 'over' ? 'background:var(--bad)' : r.status === 'near' ? 'background:var(--warn)' : ''}"></i></div>`; }
+  else { const left = it.amountCents - r.usedCents, pct = Math.min(100, Math.round(r.usedCents * 100 / it.amountCents)); sub = (it.kind === 'card' ? (it.dueDay ? 'Fatura vence dia ' + it.dueDay + ' · ' : '') + 'Fatura ' : 'Gasto ') + brl(r.usedCents) + ' de ' + brl(it.amountCents); right = `<div class="a ${left < 0 ? 'bad' : ''}">${left < 0 ? '−' + brl(-left) : brl(left)}<small style="display:block;font-size:11px;font-weight:700;color:var(--mut)">${left < 0 ? 'acima' : 'resta'}</small></div>`; bar = `<div class="bar"><i style="width:${pct}%;${r.status === 'over' ? 'background:var(--bad)' : r.status === 'near' ? 'background:var(--warn)' : ''}"></i></div>`; }
   return `<div class="row" onclick="openPlanItem('${it.id}')"><div class="sq">${ic(planIcon(it.kind))}</div><div class="m"><b>${esc(it.name)}</b><small>${esc(sub)}</small>${bar}</div>${right}</div>`;
 };
 function planCard(pk) {
@@ -1481,11 +1577,23 @@ function planCard(pk) {
   const stat = (l, v, cls = '') => `<div class="stat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
   return `<div class="card"><div class="phead"><h3>Orçamento do dia ${day}</h3><div class="lead">Período de ${shortD(P.range.start)} a ${shortD(P.range.end)}</div></div>
   <div class="mini"><div><small>Rendimento</small><b>${brl(P.incomeBase)}</b></div><div><small>Planejado</small><b>${brl(P.plannedTotal)}</b></div></div>
-  ${grp('fixed', (r) => r.item.kind === 'fixed')}${grp('variable', (r) => r.item.kind === 'variable')}${grp('alloc', (r) => r.item.kind !== 'fixed' && r.item.kind !== 'variable')}
+  ${grp('fixed', (r) => r.item.kind === 'fixed')}${grp('card', (r) => r.item.kind === 'card')}${grp('variable', (r) => r.item.kind === 'variable')}${grp('alloc', (r) => !['fixed', 'variable', 'card'].includes(r.item.kind))}
   <div style="padding:6px 18px 2px"><button class="link" style="padding:0" onclick="openPlanItem(null,${q.slot})">+ Adicionar item</button></div>
   <div style="height:6px"></div>${P.offCents ? `<div class="stat" onclick="openOffPlan('${pk}')" style="cursor:pointer"><span>Gastos fora do orçamento · ${P.off.length}</span><b>${brl(P.offCents)}</b></div>` : ''}
   ${stat('Sobra do plano', brl(P.balanceCents), P.balanceCents < 0 ? 'neg' : 'pos')}${stat('Sobra com o que já aconteceu', brl(P.realBalanceCents), P.realBalanceCents < 0 ? 'neg' : '')}</div>`;
 }
+function planUpdateNote() {
+  if (!E.planItems(S).length) return '';
+  const n = E.planPreviewUpdate(S, E.planTemplate(), E.today()).changes.length; if (!n) return '';
+  return `<div class="note" style="margin:0 0 14px"><b>Nova versão da planilha disponível.</b> ${n} mudança${n > 1 ? 's' : ''} em relação ao seu orçamento atual.<br><button class="link" style="padding:6px 0 0" onclick="openPlanUpdate()">Ver e atualizar</button></div>`;
+}
+window.openPlanUpdate = () => {
+  const r = E.planPreviewUpdate(S, E.planTemplate(), E.today()), lab = { novo: 'Novo', alterado: 'Alterado', removido: 'Sai do orçamento' }, ord = ['alterado', 'novo', 'removido'];
+  sheet(`<h2>Atualizar o orçamento</h2><p class="lead">Confira o que muda. Contas mensais e contas a pagar ainda não pagas acompanham as mudanças. O que já foi pago e os seus lançamentos não são alterados.</p>
+  ${ord.map((t) => { const l = r.changes.filter((c) => c.type === t); return l.length ? `<div class="eyebrow" style="margin-top:6px">${lab[t]} · ${l.length}</div><div class="card" style="margin:0 0 10px">${l.map((c) => `<div class="row" style="cursor:default"><div class="m"><b>${esc(c.name)}</b><small>${esc(c.text)}</small></div></div>`).join('')}</div>` : ''; }).join('')}
+  <div style="height:12px"></div><button class="btn" onclick="doPlanUpdate()">Atualizar orçamento</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Agora não</button>`);
+};
+window.doPlanUpdate = () => { try { const r = E.planUpdate(S, E.planTemplate(), E.today()); save(); closeSheet(); toast('Orçamento atualizado · ' + r.changes.length + ' mudanças'); render(); } catch (e) { toast(e.message); } };
 function vOrc() {
   const pk1 = E.pk(month, 1), pk2 = E.pk(month, 2), pd = E.cfg(S).payDays;
   if (!E.planItems(S).length) return `${topbar()}${pageH('Orçamento', 'Decida quanto cada recebimento vai pagar.')}
@@ -1498,9 +1606,9 @@ function vOrc() {
   <div class="card"><table class="cmp"><thead><tr><th></th><th>Dia ${pd[0]}</th><th>Dia ${pd[1]}</th><th>Mês</th></tr></thead><tbody>
   ${row('Rendimento', a.incomeBase, b.incomeBase)}${row('Planejado', a.plannedTotal, b.plannedTotal)}${row('Já pago', a.paidTotal, b.paidTotal, 'pos')}${row('Sobra do plano', a.balanceCents, b.balanceCents, '', true)}</tbody></table></div>
   ${warn.length ? `<div class="note warn" style="margin:-4px 0 14px">${warn.join(' ')} Ajuste algum item para fechar a conta.</div>` : ''}
-  <button class="btn ghost" style="margin-bottom:14px" onclick="openGenerate()">Lançar as contas fixas deste mês</button>
+  ${planUpdateNote()}<button class="btn ghost" style="margin-bottom:14px" onclick="openGenerate()">Lançar as contas fixas deste mês</button>
   ${planCard(pk1)}${planCard(pk2)}
-  <details class="how"><summary>Como funciona?</summary>Cada item pertence a um recebimento. Contas fixas viram lançamentos "a pagar" quando você usa o botão acima (nunca duplicam e nada é pago sozinho). Orçamentos variáveis comparam o limite com o que você gastou no período, pelo item escolhido no lançamento, pelo nome na descrição ou pela categoria, quando ela é única. Reservas e investimentos são separações de dinheiro: marque "Separei" quando fizer. Tirar um item do orçamento nunca apaga gastos.</details>`;
+  <details class="how"><summary>Como funciona?</summary>Cada item pertence a um recebimento. Contas fixas viram lançamentos "a pagar" quando você usa o botão acima (nunca duplicam e nada é pago sozinho). Orçamentos variáveis comparam o limite com o que você gastou no período, pelo item escolhido no lançamento, pelo nome na descrição ou pela categoria, quando ela é única. O "Cartão reservado" é o teto da fatura que vence naquele recebimento: compras no cartão contam nele e não nos orçamentos em dinheiro (a menos que você escolha o item no lançamento). Reservas e investimentos são separações de dinheiro: marque "Separei" quando fizer. Tirar um item do orçamento nunca apaga gastos.</details>`;
 }
 window.togglePlanDone = (pk, id) => { E.planSetDone(S, pk, id, !S.plan.done[pk + '|' + id]); save(); render(); };
 window.importPlan = () => ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); E.planFillBudgets(S, month, 12); save(); toast('Orçamento importado e limites por categoria preenchidos'); render(); } catch (e) { toast(e.message); } }, 'Importar');
@@ -1512,10 +1620,10 @@ window.openPlanItem = (id, slot) => {
   const it = id ? S.plan.items.find((x) => x.id === id) : { slot: slot || 1, kind: 'fixed', name: '', amountCents: 0, dueDay: '', categoryId: '' }, pd = E.cfg(S).payDays;
   sheet(`<h2>${id ? 'Editar item' : 'Novo item'}</h2>
   ${F('Nome', `<input id="pl-n" value="${esc(it.name)}" placeholder="Ex.: Aluguel">`)}
-  ${F('Tipo', `<select id="pl-k" onchange="$('#pl-due').style.display=this.value==='fixed'?'block':'none'">${planKinds.map((k) => `<option value="${k}" ${k === it.kind ? 'selected' : ''}>${E.PLAN_KINDS[k]}</option>`).join('')}</select>`)}
+  ${F('Tipo', `<select id="pl-k" onchange="$('#pl-due').style.display=(this.value==='fixed'||this.value==='card')?'block':'none'">${planKinds.map((k) => `<option value="${k}" ${k === it.kind ? 'selected' : ''}>${E.PLAN_KINDS[k]}</option>`).join('')}</select>`)}
   ${F('Valor planejado', `<input id="pl-v" inputmode="decimal" value="${it.amountCents ? moneyIn(it.amountCents) : ''}" placeholder="0,00">`)}
   ${F('Sai de qual recebimento?', `<select id="pl-s"><option value="1" ${it.slot === 1 ? 'selected' : ''}>Dia ${pd[0]}</option><option value="2" ${it.slot === 2 ? 'selected' : ''}>Dia ${pd[1]}</option></select>`)}
-  <div id="pl-due" style="display:${it.kind === 'fixed' ? 'block' : 'none'}">${F('Dia do vencimento', `<input id="pl-d" type="number" min="1" max="31" inputmode="numeric" value="${it.dueDay || ''}" placeholder="Ex.: 10">`, 'Usado para lançar a conta fixa com a data certa.')}</div>
+  <div id="pl-due" style="display:${it.kind === 'fixed' || it.kind === 'card' ? 'block' : 'none'}">${F('Dia do vencimento', `<input id="pl-d" type="number" min="1" max="31" inputmode="numeric" value="${it.dueDay || ''}" placeholder="Ex.: 10">`, 'Conta fixa: usado para lançar com a data certa. Cartão: dia em que a fatura vence.')}</div>
   ${F('Categoria', `<select id="pl-c"><option value="">Sem categoria</option>${catOpts('expense', it.categoryId)}</select>`, 'Ajuda a contar os gastos deste item.')}
   <div style="height:22px"></div><button class="btn" onclick="savePlanItem('${id || ''}')">Salvar</button>
   ${id ? `<div style="height:10px"></div><button class="btn ghost" onclick="removePlanItem('${id}')">Tirar do orçamento</button>` : ''}`);
@@ -1656,9 +1764,26 @@ window.openFilters = () => {
 window.applyFilters = () => { Object.assign(CF, { cardId: val('f-card'), month: val('f-month'), invoice: val('f-inv'), categoryId: val('f-cat'), merchant: val('f-mer').trim(), type: val('f-type'), from: val('f-from'), to: val('f-to') }); cfLimit = 60; closeSheet(); render(); };
 window.clearFilters = () => { CF_KEYS.forEach((k) => { CF[k] = ''; }); cfLimit = 60; closeSheet(); render(); };
 
+const cardUndoGet = () => { try { const x = lsGet('fc_cards_undo'); return x ? JSON.parse(x) : null; } catch (e) { return null; } };
+function cardTools() {
+  const u = cardUndoGet();
+  return `<div class="ctools"><button class="clear" onclick="openClearCards()">${ic('x')}Limpar valores</button>${u ? `<button class="link" style="padding:0" onclick="undoClearCards()">${ic('undo')}Desfazer limpeza</button>` : ''}</div>`;
+}
+window.openClearCards = () => {
+  const p = E.previewClearCards(S);
+  sheet(`<h2>Limpar valores dos cartões</h2><p class="lead" style="color:var(--tx);line-height:1.5">Zera esta aba para você informar tudo de novo. Os cartões continuam cadastrados (nome e dias), mas ficam com o <b>limite zerado</b>.</p>
+  <div class="card" style="margin:0 0 12px"><div class="stat"><span>Compras</span><b>${p.purchases}</b></div><div class="stat"><span>Parcelas nas faturas</span><b>${p.installments}</b></div><div class="stat"><span>Estornos</span><b>${p.refunds}</b></div><div class="stat"><span>Pagamentos de fatura</span><b>${p.payments}${p.paymentsCents ? ' · ' + brl(p.paymentsCents) : ''}</b></div><div class="stat"><span>Limite total</span><b>${brl(p.limitsCents)} → R$ 0,00</b></div></div>
+  ${p.paymentsCents ? `<div class="note warn">Os pagamentos de fatura (${brl(p.paymentsCents)}) também são apagados, e esse dinheiro volta para o saldo das contas.</div>` : ''}
+  <div class="note">Você poderá desfazer logo depois, pelo botão "Desfazer limpeza" desta aba.</div>
+  <div style="height:12px"></div><button class="btn" style="background:var(--bad)" onclick="doClearCards()">Limpar valores</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Voltar</button>`);
+};
+window.doClearCards = () => { try { const snap = E.clearCards(S); try { lsSet('fc_cards_undo', JSON.stringify(snap)); } catch (e) {} save(); closeSheet(); cardSub = 'cartoes'; toast('Cartões zerados'); render(); } catch (e) { toast(e.message); } };
+window.undoClearCards = () => ask('Devolver tudo o que foi apagado na última limpeza? Compras, parcelas, pagamentos de fatura e limites voltam como estavam.', () => { const snap = cardUndoGet(); if (!snap) return toast('Nada para desfazer'); const n = E.restoreCards(S, snap); try { localStorage.removeItem('fc_cards_undo'); } catch (e) {} save(); toast(n + ' lançamentos restaurados'); render(); }, 'Desfazer');
+window.openEditCard = (id) => { const c = S.cards.find((x) => x.id === id); sheet(`<h2>Editar cartão</h2>${F('Nome', `<input id="ec-n" value="${esc(c.name)}">`)}${F('Limite total', `<input id="ec-l" inputmode="decimal" value="${c.limitCents ? moneyIn(c.limitCents) : ''}" placeholder="0,00">`)}${F('Dia que fecha a fatura', `<input id="ec-c" type="number" min="1" max="28" inputmode="numeric" value="${c.closingDay}">`)}${F('Dia que vence', `<input id="ec-d" type="number" min="1" max="28" inputmode="numeric" value="${c.dueDay}">`, 'Mudar os dias vale para as próximas compras. As já lançadas ficam nas faturas em que estão.')}<div style="height:22px"></div><button class="btn" onclick="saveEditCard('${id}')">Salvar</button>`); };
+window.saveEditCard = (id) => { try { E.editCard(S, id, { name: val('ec-n'), limitCents: E.toCents(val('ec-l') || '0'), closingDay: +val('ec-c'), dueDay: +val('ec-d') }); save(); closeSheet(); toast('Cartão atualizado'); render(); } catch (e) { toast(e.message); } };
 function vCartoes() {
   const cards = cardsInCtx();
-  const seg = `<div class="seg"><button class="${cardSub === 'cartoes' ? 'on' : ''}" onclick="cardSub='cartoes';render()">Cartões</button><button class="${cardSub === 'lanc' ? 'on' : ''}" onclick="cardSub='lanc';render()">Lançamentos</button></div>`;
+  const seg = `<div class="seg"><button class="${cardSub === 'cartoes' ? 'on' : ''}" onclick="cardSub='cartoes';render()">Cartões</button><button class="${cardSub === 'lanc' ? 'on' : ''}" onclick="cardSub='lanc';render()">Lançamentos</button></div>${cardTools()}`;
   const head = pageH('Cartões', cardSub === 'lanc' ? 'Todas as compras, com busca e edição.' : 'Limite, faturas e parcelas.', `<button class="link" onclick="openCard()">+ Novo</button>`);
   if (!cards.length) return `${topbar()}${head}<div class="card">${empty('card', 'Nenhum cartão cadastrado', 'Cadastre para acompanhar limite e faturas.', `<br><button class="btn" onclick="openCard()">Cadastrar cartão</button>`)}</div>`;
   if (cardSub === 'lanc') {
@@ -1671,7 +1796,7 @@ function vCartoes() {
   }
   return `${topbar()}${head}${seg}${cards.map((c) => {
     const lim = E.cardLimit(S, c), sm = E.cardSummary(S, c), invs = E.invoices(S, c.id).filter((i) => i.status !== 'paid' || i.remainingCents > 0), pct = c.limitCents ? Math.min(100, Math.round(lim.usedCents / c.limitCents * 100)) : 0;
-    return `<div class="creditcard"><div><div class="n">${esc(c.name)}</div><div class="v">${brl(lim.availableCents)}</div><small>de limite disponível · total ${brl(c.limitCents)}</small></div><div><div class="bar"><i style="width:${pct}%"></i></div><small style="display:block;margin-top:10px">Fecha dia ${c.closingDay} · vence dia ${c.dueDay}</small></div></div>
+    return `${!c.limitCents ? `<div class="note warn" style="margin:0 0 10px">Informe o limite do cartão ${esc(c.name)}. <button class="link" style="padding:0" onclick="openEditCard('${c.id}')">Informar limite</button></div>` : ''}<div class="creditcard"><div><div class="n">${esc(c.name)}</div><div class="v">${brl(lim.availableCents)}</div><small>de limite disponível · total ${brl(c.limitCents)}</small></div><div><div class="bar"><i style="width:${pct}%"></i></div><small style="display:block;margin-top:10px">Fecha dia ${c.closingDay} · vence dia ${c.dueDay} · <button class="link" style="padding:0;display:inline;color:inherit;text-decoration:underline" onclick="openEditCard('${c.id}')">Editar</button></small></div></div>
     <div class="stats4" style="margin-top:0"><div class="glass"><div class="t">Gasto no mês</div><div class="v">${partMoney(sm.spentMonthCents)}</div></div><div class="glass"><div class="t">Fatura atual</div><div class="v">${partMoney(sm.currentCents)}</div></div><div class="glass"><div class="t">Parcelas futuras</div><div class="v">${partMoney(sm.futureCents)}</div></div><div class="glass"><div class="t">Já usado do limite</div><div class="v">${partMoney(lim.usedCents)}</div></div></div>
     ${sm.closedCents ? `<div class="note warn" style="margin:-2px 0 12px">Fatura fechada a pagar: ${brl(sm.closedCents)}</div>` : ''}
     <div class="card">${invs.length ? invs.map((i) => `<div class="row" onclick="openInvoice('${c.id}','${i.dueDate}')"><div class="sq">${ic('receipt')}</div><div class="m"><b>Fatura de ${MONTHS[+i.dueDate.slice(5, 7) - 1].toLowerCase()}</b><small>${i.status === 'open' ? 'Aberta' : 'Fechada'} · vence ${fd(i.dueDate)} · ${i.items.length} lançamento${i.items.length === 1 ? '' : 's'}</small></div><div class="a">${brl(i.remainingCents)}</div></div>`).join('') : empty('check', 'Sem faturas em aberto', 'Compras no cartão aparecem aqui.')}</div>`;
