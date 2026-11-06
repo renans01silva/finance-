@@ -134,7 +134,8 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
 .fchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:none;color:var(--tx);padding:7px 8px 7px 12px;border-radius:99px;font-weight:700;font-size:12.5px;cursor:pointer}.fchip svg.i{width:14px;height:14px}
 .stats4{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.stats4 .glass{padding:14px 16px}.stats4 .t{font-size:12.5px;color:var(--mut);font-weight:700}.stats4 .v{font-size:20px;font-weight:800;letter-spacing:-.6px;margin-top:6px}
 .two2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.pals{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pal{border:2px solid var(--line);background:var(--card);color:var(--tx);border-radius:20px;padding:12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px}.pal.on{border-color:var(--link)}.pal .ck{opacity:0;display:inline-grid}.pal.on .ck{opacity:1;color:var(--link)}.pal .ck svg.i{width:18px;height:18px}
+.pals{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pal{border:2px solid var(--line);background:var(--card);color:var(--tx);border-radius:20px;padding:12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px}.pal.on{border-color:var(--link)}
+.orcq{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-top:18px;color:var(--tx);cursor:pointer}.orcq .sq{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none}.orcq .t{flex:1;display:flex;flex-direction:column;gap:2px}.orcq small{color:var(--mut);font-weight:600;font-size:12px}.orcq .chev{color:var(--mut)}.orcq.col{flex-direction:column;align-items:stretch;gap:12px}.orcq .top{display:flex;align-items:center;gap:12px}.orcq .top b{flex:1;font-size:16px}.orcq .two3{display:grid;grid-template-columns:1fr 1fr;gap:10px}.orcq .two3>div{background:var(--soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.orcq .two3 b{font-size:17px}.catsum .row .a{font-size:15px;border:0;background:none;padding:0;box-shadow:none;min-width:92px;text-align:right;flex:none}.catsum .row .m small{white-space:nowrap}.pal .ck{opacity:0;display:inline-grid}.pal.on .ck{opacity:1;color:var(--link)}.pal .ck svg.i{width:18px;height:18px}
 .pal .sw{display:flex;height:38px;border-radius:12px;overflow:hidden}.pal .sw i{flex:1}.pal b{font-size:14px;font-weight:800;display:flex;justify-content:space-between;align-items:center}.pal small{color:var(--mut);font-size:12px;font-weight:500;line-height:1.3}
 .pill.pri{background:var(--soft);color:var(--link)}
 .note{background:var(--seg);border-radius:16px;padding:12px 14px;font-size:13.5px;font-weight:600;line-height:1.5;margin-top:12px}.note.warn{background:var(--warnbg);color:var(--warn)}.note.bad{background:var(--badbg);color:var(--bad)}
@@ -410,19 +411,23 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
   E.addRecurring = (s, o) => {
     needAmount(o.amountCents);
     const r = { id: E.uid(), kind: o.kind, desc: o.desc, amountCents: o.amountCents, accountId: o.accountId, categoryId: o.categoryId, day: o.day, context: o.context || 'personal', startDate: o.startDate, generatedUntil: null, fundSlot: o.fundSlot === 1 || o.fundSlot === 2 ? o.fundSlot : null };
+    if (o.planItemId) r.planItemId = o.planItemId;
     s.recurrences.push(r); E.generateRecurring(s, o.today || E.today(), 12); return r;
   };
   E.generateRecurring = (s, today, monthsAhead) => {
     const limit = E.addMonths(today.slice(0, 8) + '01', monthsAhead);
     let n = 0;
     s.recurrences.forEach((r) => {
+      if (r.ended) return;
       for (let i = 0; i < 400; i++) {
         const m = E.addMonths(r.startDate.slice(0, 8) + '01', i);
         if (m > limit) break;
         const due = m.slice(0, 8) + pad(Math.min(r.day, E.daysInMonth(+m.slice(0, 4), +m.slice(5, 7))));
         if (due < r.startDate) continue;
         if (s.tx.some((t) => t.recurrenceId === r.id && t.dueDate === due)) continue; // nunca duplica
+        if (r.planItemId && s.tx.some((t) => t.planItemId === r.planItemId && t.dueDate === due && t.kind === 'expense')) continue; // já lançada pelo orçamento
         const t = Object.assign(base(s, { desc: r.desc, categoryId: r.categoryId, context: r.context, date: due, dueDate: due }), { kind: r.kind, amountCents: r.amountCents, accountId: r.accountId, recurrenceId: r.id, method: 'auto_debit' });
+        if (r.planItemId) t.planItemId = r.planItemId;
         if (r.fundSlot && r.kind === 'expense') t.fund = E.fundForSlot(s, due, r.fundSlot);
         if (r.fundSlot && r.kind === 'income') t.slot = r.fundSlot;
         s.tx.push(t); hist(t, 'gerada pela recorrência'); n++;
@@ -1005,6 +1010,69 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     return { made, skipped };
   };
 
+  // ───── 4) Limites por categoria vindos do orçamento + exclusão total de compra no cartão
+  // soma, por categoria, tudo que o orçamento reserva (contas fixas + variáveis dos dois recebimentos)
+  E.planCategoryBudgets = (s) => {
+    const m = {}; E.planItems(s).filter((i) => (i.kind === 'fixed' || i.kind === 'variable') && i.categoryId).forEach((i) => { m[i.categoryId] = (m[i.categoryId] || 0) + i.amountCents; });
+    return m;
+  };
+  // preenche limites vazios (nunca sobrescreve um limite que o usuário já definiu, a menos que opts.overwrite)
+  E.planFillBudgets = (s, fromYm, months = 12, opts = {}) => {
+    const cat = E.planCategoryBudgets(s); let n = 0;
+    for (let k = 0; k < months; k++) {
+      const ym = E.addMonths(fromYm + '-01', k).slice(0, 7);
+      Object.entries(cat).forEach(([c, cents]) => { const key = ym + '|' + c; if (opts.overwrite || !s.budgets[key]) { if (s.budgets[key] !== cents) n++; s.budgets[key] = cents; } });
+    }
+    return n;
+  };
+  E.previewPurchaseDelete = (s, id) => {
+    const p = (s.purchases || []).find((x) => x.id === id); if (!p) return { blocked: 'Compra não encontrada.' };
+    const txs = s.tx.filter((t) => t.purchaseId === id), m = invMap(s, p.cardId), live2 = txs.filter((t) => t.status !== 'cancelled');
+    const locks = live2.map((t) => E.lockOf(m[t.invoiceDue]));
+    const inst = txs.filter((t) => t.kind === 'expense'), ref = txs.filter((t) => t.kind === 'refund');
+    return { purchase: p, blocked: locks.includes('paid') ? 'Há parcelas em fatura que já recebeu pagamento. Excluir tudo faria o valor pago ficar sem compra. Use "Registrar estorno" para devolver o dinheiro.' : null,
+      closed: locks.includes('closed'), count: inst.length, refunds: ref.length, totalCents: inst.filter((t) => t.status !== 'cancelled').reduce((a, t) => a + t.amountCents, 0), dues: [...new Set(txs.map((t) => t.invoiceDue))] };
+  };
+  // apaga de vez: compra, parcelas e estornos ligados a ela. As faturas se recalculam sozinhas e não sobra nenhum valor.
+  E.deletePurchase = (s, id, opts = {}) => {
+    const pv = E.previewPurchaseDelete(s, id); if (pv.blocked) throw new Error(pv.blocked);
+    if (pv.closed && !opts.allowClosed) throw new Error('Há parcelas em fatura fechada. Confirme que quer excluir mesmo assim.');
+    const p = pv.purchase, cardId = p.cardId;
+    s.tx = s.tx.filter((t) => t.purchaseId !== id); s.purchases = s.purchases.filter((x) => x.id !== id);
+    pv.dues.forEach((d) => { if (!s.tx.some((t) => t.cardId === cardId && t.invoiceDue === d) && s.invoiceFund) delete s.invoiceFund[cardId + '|' + d]; });
+    (s.log = s.log || []).push({ at: new Date().toISOString(), what: `compra excluída: ${p.desc} (${pv.count} parcela${pv.count === 1 ? '' : 's'}, ${E.brl(p.totalCents)})` });
+    return pv;
+  };
+
+  // ───── 5) Contas mensais a partir do orçamento (com vencimento) + parar/ajustar uma conta mensal
+  const dueIn = (ym, day) => ym + '-' + pad(Math.min(day, E.daysInMonth(+ym.slice(0, 4), +ym.slice(5, 7))));
+  E.planRecurrenceCandidates = (s) => E.planItems(s).filter((i) => i.kind === 'fixed' && i.dueDay && !s.recurrences.some((r) => r.planItemId === i.id && !r.ended));
+  E.planRecurrences = (s, { accountId, context = 'personal', today = E.today(), includePast = false } = {}) => {
+    if (!accountId) throw new Error('Escolha a conta de onde essas contas saem.');
+    const made = [], skipped = [];
+    E.planItems(s).filter((i) => i.kind === 'fixed' && i.dueDay).forEach((i) => {
+      if (s.recurrences.some((r) => r.planItemId === i.id && !r.ended)) { skipped.push(i.name); return; }
+      let start = dueIn(today.slice(0, 7), i.dueDay);
+      if (start < today && !includePast) start = dueIn(E.addMonths(today.slice(0, 8) + '01', 1).slice(0, 7), i.dueDay);
+      made.push(E.addRecurring(s, { kind: 'expense', desc: i.name, amountCents: i.amountCents, accountId, categoryId: i.categoryId || 'e_Outros', day: i.dueDay, context, startDate: start, fundSlot: i.slot, planItemId: i.id, today }));
+    });
+    return { made, skipped };
+  };
+  // parar: nada é apagado. Contas futuras ainda não pagas são canceladas; as já pagas ficam.
+  E.stopRecurring = (s, id, today = E.today()) => {
+    const r = s.recurrences.find((x) => x.id === id); if (!r) throw new Error('Conta mensal não encontrada.');
+    r.ended = true; let n = 0;
+    s.tx.filter((t) => t.recurrenceId === id && t.status === 'pending' && t.dueDate >= today).forEach((t) => { t.status = 'cancelled'; hist(t, 'conta mensal encerrada'); n++; });
+    return n;
+  };
+  // ajustar valor: vale para a recorrência e para as contas futuras ainda não pagas
+  E.editRecurringAmount = (s, id, cents, today = E.today()) => {
+    needAmount(cents); const r = s.recurrences.find((x) => x.id === id); if (!r) throw new Error('Conta mensal não encontrada.');
+    const old = r.amountCents; r.amountCents = cents; let n = 0;
+    s.tx.filter((t) => t.recurrenceId === id && t.status === 'pending' && t.dueDate >= today).forEach((t) => { hist(t, `valor: ${E.brl(t.amountCents)} → ${E.brl(cents)} (ajuste da conta mensal)`); t.amountCents = cents; n++; });
+    return n;
+  };
+
   if (typeof module !== 'undefined') module.exports = E; else root.FC = E;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -1136,7 +1204,7 @@ async function bootCloud() {
 window.openImport = () => sheet(`<h2>Restaurar backup</h2><p class="lead">Cole aqui o texto do backup que você copiou antes. Isto substitui os dados atuais.</p><textarea id="im" rows="6" placeholder="Cole o backup"></textarea><div style="height:14px"></div><button class="btn" onclick="doImport()">Restaurar</button>`);
 window.doImport = () => { try { const d = JSON.parse(val('im')); if (!d || !Array.isArray(d.accounts) || !Array.isArray(d.tx)) throw 0; ask('Substituir TODOS os dados atuais pelo backup?', () => { S = d; fixState(); E.migrate(S); syncPref(); save(); closeSheet(); toast('Backup restaurado'); render(); }, 'Restaurar'); } catch (e) { toast('Backup inválido.'); } };
 
-const NAV = [['inicio', 'home', 'Início'], ['mov', 'list', 'Movimentos'], ['contas', 'receipt', 'Contas'], ['cartoes', 'card', 'Cartões']];
+const NAV = [['inicio', 'home', 'Início'], ['mov', 'list', 'Movimentos'], ['contas', 'receipt', 'Contas'], ['cartoes', 'card', 'Cartões'], ['orc', 'wallet', 'Orçamento']];
 function renderNav() { $('#nav').innerHTML = NAV.map(([k, i, l]) => `<button class="${tab === k ? 'on' : ''}" onclick="go('${k}')">${ic(i)}${l}</button>`).join('') + `<button onclick="openDrawer()">${ic('menu')}Menu</button>`; }
 window.go = (k) => { tab = k; closeDrawer(); render(); window.scrollTo(0, 0); };
 window.setCtx = (c) => { S.prefs.ctx = c; save(); closeSheet(); closeDrawer(); render(); };
@@ -1354,6 +1422,12 @@ const periodTiles = (pk) => {
   ${E.planItems(S).length ? (() => { const P = E.planPeriod(S, pk, ctx()); return `<div class="glass sobrar" style="margin-bottom:12px" onclick="go('orc')"><div><div class="t">Orçamento deste recebimento</div><div class="v ${P.balanceCents < 0 ? 'neg' : ''}">${partMoney(P.balanceCents)}</div><small>Sobra do plano · planejado ${brl(P.plannedTotal)} de ${brl(P.incomeBase)}</small></div><button class="link" style="padding:0">Abrir</button></div>`; })() : ''}
   <details class="how"><summary>Como calculamos?</summary>Previsto: tudo que você espera receber neste período. Recebido: o que você já confirmou. Projetado: previsto − despesas vinculadas. Disponível: recebido − o que já foi pago. Receita que ainda não entrou nunca conta como dinheiro disponível.</details>`;
 };
+function orcTile() {
+  if (!E.planItems(S).length) return `<button class="glass orcq" onclick="go('orc')"><span class="sq">${ic('wallet')}</span><span class="t"><b>Monte seu orçamento</b><small>Decida quanto cada recebimento vai pagar</small></span>${ic('chevR', 'chev')}</button>`;
+  const pd = E.cfg(S).payDays, a = E.planPeriod(S, E.pk(month, 1), ctx()), b = E.planPeriod(S, E.pk(month, 2), ctx());
+  const cell = (d, P) => `<div><small>Dia ${d}</small><b class="${P.balanceCents < 0 ? 'neg' : 'pos'}">${brl(P.balanceCents)}</b><small>${P.balanceCents < 0 ? 'falta no plano' : 'sobra no plano'}</small></div>`;
+  return `<button class="glass orcq col" onclick="go('orc')"><span class="top"><span class="sq">${ic('wallet')}</span><b>Orçamento de ${MONTHS[+month.slice(5) - 1].toLowerCase()}</b>${ic('chevR', 'chev')}</span><span class="two3">${cell(pd[0], a)}${cell(pd[1], b)}</span></button>`;
+}
 function vInicio() {
   const today = E.today(), m = E.monthSummary(S, month, ctx(), today), ups = E.upcoming(S, 7, ctx(), today), ins = E.insights(S, ctx(), today);
   const first = !S.accounts.length, view = S.prefs.view || 'month', pd = E.cfg(S).payDays;
@@ -1365,6 +1439,7 @@ function vInicio() {
   <div class="bal" id="balbox">${balHtml()}</div>
   <div class="qa"><button onclick="openExpense()"><span class="c">${ic('up')}</span>Despesa</button><button onclick="openIncome()"><span class="c">${ic('down')}</span>Entrada</button><button onclick="openTransfer()"><span class="c">${ic('swap')}</span>Transferir</button><button onclick="openNL()"><span class="c">${ic('chat')}</span>Por frase</button></div>
   ${first ? `<div class="glass" style="margin-top:22px"><b style="font-size:17px">Comece por aqui</b><div class="lead" style="margin:6px 0 16px">Cadastre onde seu dinheiro está. Depois é só registrar despesas e entradas.</div><button class="btn light" onclick="openAccount()">Cadastrar primeira conta</button></div>` : ''}
+  ${orcTile()}
   <div class="eyebrow">${view === 'month' ? 'Neste mês' : 'Neste período'}<small>${MONTHS[+month.slice(5) - 1]}</small></div>
   ${seg}${view === 'month' ? monthBlock : periodTiles(E.pk(month, +view))}
   ${m.overdueCents || ins.length ? `<div class="eyebrow">Atenção</div><div class="card">${m.overdueCents ? `<div class="alert bad">${ic('alert')}<span>Você tem ${brl(m.overdueCents)} em contas atrasadas.</span></div>` : ''}${ins.map((i) => `<div class="alert ${i.level === 'bad' ? 'bad' : i.level === 'warn' ? 'warn' : 'info'}">${ic(i.level === 'info' ? 'info' : 'alert')}<span>${esc(i.text)}</span></div>`).join('')}</div>` : ''}
@@ -1428,7 +1503,7 @@ function vOrc() {
   <details class="how"><summary>Como funciona?</summary>Cada item pertence a um recebimento. Contas fixas viram lançamentos "a pagar" quando você usa o botão acima (nunca duplicam e nada é pago sozinho). Orçamentos variáveis comparam o limite com o que você gastou no período, pelo item escolhido no lançamento, pelo nome na descrição ou pela categoria, quando ela é única. Reservas e investimentos são separações de dinheiro: marque "Separei" quando fizer. Tirar um item do orçamento nunca apaga gastos.</details>`;
 }
 window.togglePlanDone = (pk, id) => { E.planSetDone(S, pk, id, !S.plan.done[pk + '|' + id]); save(); render(); };
-window.importPlan = () => ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); save(); toast('Orçamento importado'); render(); } catch (e) { toast(e.message); } }, 'Importar');
+window.importPlan = () => ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); E.planFillBudgets(S, month, 12); save(); toast('Orçamento importado e limites por categoria preenchidos'); render(); } catch (e) { toast(e.message); } }, 'Importar');
 window.openPlanIncome = () => { const pd = E.cfg(S).payDays, pl = S.plan; sheet(`<h2>Rendimentos planejados</h2><p class="lead">Quanto você espera receber em cada dia. É a base do orçamento.</p>
   ${F('Recebimento do dia ' + pd[0], `<input id="pi-1" inputmode="decimal" value="${pl.income[0] ? moneyIn(pl.income[0]) : ''}" placeholder="0,00">`)}${F('Recebimento do dia ' + pd[1], `<input id="pi-2" inputmode="decimal" value="${pl.income[1] ? moneyIn(pl.income[1]) : ''}" placeholder="0,00">`)}
   <div style="height:22px"></div><button class="btn" onclick="savePlanIncome()">Salvar</button>`); };
@@ -1499,16 +1574,42 @@ function vMov() {
   return `${topbar()}${pageH('Movimentações', 'Tudo que entrou, saiu ou foi transferido.')}${monthPicker()}<div class="card">${L.length ? L.map(txRow).join('') : empty('list', 'Nada neste mês', 'Use o botão + para registrar.')}</div>`;
 }
 
+let showAllBills = false;
+window.openRecFromPlan = () => {
+  if (needAccount()) return;
+  const noPlan = !E.planItems(S).length, items = noPlan ? E.planTemplate().items.filter((i) => i.kind === 'fixed' && i.dueDay) : E.planRecurrenceCandidates(S), pd = E.cfg(S).payDays;
+  sheet(`<h2>Contas da planilha</h2><p class="lead">Vou programar estas ${items.length} contas para todo mês, com o dia de vencimento de cada uma, e lançar os próximos 12 meses como "a pagar". Nada é pago automaticamente.</p>
+  <div class="card" style="margin:0 0 14px">${items.slice().sort((a, b) => a.dueDay - b.dueDay).map((i) => `<div class="row" style="cursor:default"><div class="m"><b>${esc(i.name)}</b><small>Todo dia ${i.dueDay} · paga com o dia ${pd[i.slot - 1]}</small></div><div class="a">${brl(i.amountCents)}</div></div>`).join('')}</div>
+  ${F('De qual conta saem?', `<select id="rp-a">${accOpts()}</select>`)}
+  ${F('Contas deste mês que já venceram', `<select id="rp-p"><option value="0">Não incluir (começar pelas próximas)</option><option value="1">Incluir como "a pagar"</option></select>`, 'Se você já pagou, deixe em "Não incluir".')}
+  <div style="height:22px"></div><button class="btn" onclick="doRecFromPlan()">Incluir contas</button>`);
+};
+window.doRecFromPlan = () => {
+  try {
+    const acc = S.accounts.find((a) => a.id === val('rp-a')), past = val('rp-p') === '1';
+    if (!E.planItems(S).length) { E.planImport(S, E.planTemplate()); E.planFillBudgets(S, month, 12); }
+    const r = E.planRecurrences(S, { accountId: acc.id, context: acc.context, includePast: past }); save(); closeSheet(); sub = 'pagar'; toast(r.made.length + ' contas mensais incluídas'); render();
+  } catch (e) { toast(e.message); }
+};
+window.openRecItem = (id) => {
+  const r = S.recurrences.find((x) => x.id === id), next = S.tx.filter((t) => t.recurrenceId === id && t.status === 'pending').sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
+  sheet(`<h2>${esc(r.desc)}</h2><p class="lead">Vence todo dia ${r.day}.${next ? ' Próxima: ' + fd(next.dueDate) + '.' : ''}</p>
+  ${F('Valor mensal', `<input id="rv-v" inputmode="decimal" value="${moneyIn(r.amountCents)}">`, 'Muda o valor das contas futuras ainda não pagas. As já pagas ficam como estão.')}
+  <div style="height:22px"></div><button class="btn" onclick="saveRecItem('${id}')">Salvar valor</button><div style="height:10px"></div><button class="btn ghost" onclick="stopRecItem('${id}')">Parar esta conta mensal</button>`);
+};
+window.saveRecItem = (id) => { try { const n = E.editRecurringAmount(S, id, E.toCents(val('rv-v'))); save(); closeSheet(); toast(n + ' contas futuras atualizadas'); render(); } catch (e) { toast(e.message); } };
+window.stopRecItem = (id) => ask('Parar esta conta mensal? As contas futuras ainda não pagas serão canceladas. O que já foi pago continua no histórico.', () => { const n = E.stopRecurring(S, id); save(); closeSheet(); toast(n + ' contas futuras canceladas'); render(); }, 'Parar');
 function vContas() {
   const L = listCtx().filter((t) => t.status === 'pending' && !t.cardId && t.kind !== 'transfer'), today = E.today();
   const pay = L.filter((t) => t.kind === 'expense').sort((a, b) => a.dueDate.localeCompare(b.dueDate)), rec = L.filter((t) => t.kind === 'income').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  const recs = S.recurrences.filter((r) => ctx() === 'all' || r.context === ctx());
+  const recs = S.recurrences.filter((r) => !r.ended && (ctx() === 'all' || r.context === ctx())), cand = E.planRecurrenceCandidates(S).length, noPlan = !E.planItems(S).length;
   const seg = `<div class="seg">${[['pagar', 'A pagar'], ['receber', 'A receber'], ['rec', 'Mensais']].map(([k, l]) => `<button class="${sub === k ? 'on' : ''}" onclick="sub='${k}';render()">${l}</button>`).join('')}</div>`;
-  const groups = (arr) => { const g = [['Atrasadas', arr.filter((t) => t.dueDate < today)], ['Esta semana', arr.filter((t) => t.dueDate >= today && t.dueDate <= E.addDays(today, 7))], ['Mais adiante', arr.filter((t) => t.dueDate > E.addDays(today, 7))]].filter((x) => x[1].length); return g.map(([n, a]) => `<div class="grp">${n}</div>${a.map(txRow).join('')}`).join(''); };
+  const hiddenN = showAllBills ? 0 : pay.filter((t) => t.dueDate > E.addDays(today, 45)).length;
+  const groups = (arr) => { const g = [['Atrasadas', arr.filter((t) => t.dueDate < today)], ['Esta semana', arr.filter((t) => t.dueDate >= today && t.dueDate <= E.addDays(today, 7))], ['Mais adiante', arr.filter((t) => t.dueDate > E.addDays(today, 7) && (showAllBills || t.dueDate <= E.addDays(today, 45)))]].filter((x) => x[1].length); return g.map(([n, a]) => `<div class="grp">${n}</div>${a.map(txRow).join('')}`).join(''); };
   let body = '', lead = '';
-  if (sub === 'pagar') { const tot = pay.reduce((a, t) => a + t.amountCents, 0); lead = pay.length ? `${pay.length} conta${pay.length > 1 ? 's' : ''} · ${brl(tot)} no total` : 'Nada pendente.'; body = `<div class="card">${pay.length ? groups(pay) : empty('check', 'Nenhuma conta a pagar', 'Use o botão + para adicionar uma despesa com vencimento.')}</div>`; }
+  if (sub === 'pagar') { const near = pay.filter((t) => showAllBills || t.dueDate <= E.addDays(today, 45)), tot = near.reduce((a, t) => a + t.amountCents, 0); lead = pay.length ? `${near.length} conta${near.length > 1 ? 's' : ''} · ${brl(tot)} ${showAllBills ? 'no total' : 'nos próximos 45 dias'}` : 'Nada pendente.'; body = `<div class="card">${pay.length ? groups(pay) : empty('check', 'Nenhuma conta a pagar', 'Use o botão + para adicionar uma despesa com vencimento.')}</div>${hiddenN ? `<button class="link" onclick="showAllBills=true;render()">Mostrar as outras ${hiddenN} contas mais adiante</button>` : showAllBills ? `<button class="link" onclick="showAllBills=false;render()">Mostrar só os próximos 45 dias</button>` : ''}`; }
   if (sub === 'receber') { const tot = rec.reduce((a, t) => a + t.amountCents, 0); lead = rec.length ? `${rec.length} valor${rec.length > 1 ? 'es' : ''} · ${brl(tot)} a receber` : 'Nada previsto.'; body = `<div class="card">${rec.length ? groups(rec) : empty('down', 'Nada a receber', 'Registre uma entrada marcando “Ainda não” em “Já caiu na conta?”.')}</div>`; }
-  if (sub === 'rec') { lead = 'Contas que se repetem todo mês.'; body = `<div class="card">${recs.length ? recs.map((r) => `<div class="row" style="cursor:default"><div class="sq">${ic('repeat')}</div><div class="m"><b>${esc(r.desc)}</b><small>Todo dia ${r.day} · ${r.kind === 'income' ? 'Entrada' : 'Despesa'}</small></div><div class="a">${brl(r.amountCents)}</div></div>`).join('') : empty('repeat', 'Nenhuma conta mensal', 'Aluguel, internet, escola... programe uma vez só.')}</div><button class="link" onclick="openRecurring()">+ Programar conta mensal</button>`; }
+  if (sub === 'rec') { lead = 'Contas que se repetem todo mês.'; body = `<div class="card">${recs.length ? recs.slice().sort((a, b) => a.day - b.day).map((r) => `<div class="row" onclick="openRecItem('${r.id}')"><div class="sq">${ic('repeat')}</div><div class="m"><b>${esc(r.desc)}</b><small>Todo dia ${r.day}${r.kind === 'income' ? ' · Entrada' : ''}${r.fundSlot ? ' · paga com o dia ' + E.cfg(S).payDays[r.fundSlot - 1] : ''}</small></div><div class="a">${brl(r.amountCents)}</div></div>`).join('') : empty('repeat', 'Nenhuma conta mensal', 'Aluguel, internet, escola... programe uma vez só.')}</div>${cand || noPlan ? `<button class="btn" style="margin:14px 0 4px" onclick="openRecFromPlan()">Incluir as contas da minha planilha</button>` : ''}<button class="link" onclick="openRecurring()">+ Programar conta mensal</button>`; }
   return `${topbar()}${pageH('Contas', lead)}${seg}${body}`;
 }
 
@@ -1606,7 +1707,7 @@ window.openPurchase = (pid, txid) => {
   ${F('Cartão', `<select id="pu-card" ${dis}>${S.cards.map((c) => `<option value="${c.id}" ${c.id === p.cardId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`)}
   ${F('Observações', `<textarea id="pu-notes" rows="2" placeholder="Anotações sobre esta compra" ${dis}>${esc(p.notes || '')}</textarea>`)}
   <details class="how" style="padding:14px 0 0"><summary>Histórico de alterações · ${(p.history || []).length}</summary><div style="margin-top:8px">${hist}</div></details>
-  <div style="height:20px"></div>${cancelled ? `<button class="btn ghost" onclick="closeSheet()">Fechar</button>` : `<button class="btn" onclick="savePurchase('${pid}')">Salvar alterações</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Cancelar</button><div style="height:6px"></div><div style="display:flex;justify-content:space-between"><button class="link" onclick="openRefund('${pid}')">Registrar estorno</button><button class="link" style="color:var(--bad)" onclick="deletePurchase('${pid}')">Excluir lançamento</button></div>`}`);
+  <div style="height:20px"></div>${cancelled ? `<button class="btn ghost" onclick="closeSheet()">Fechar</button><div style="height:10px"></div><button class="link" style="color:var(--bad)" onclick="deletePurchase('${pid}')">Excluir compra por completo</button>` : `<button class="btn" onclick="savePurchase('${pid}')">Salvar alterações</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Cancelar</button><div style="height:6px"></div><div style="display:flex;justify-content:space-between"><button class="link" onclick="openRefund('${pid}')">Registrar estorno</button><button class="link" style="color:var(--bad)" onclick="deletePurchase('${pid}')">Excluir compra</button></div>`}`);
 };
 window.savePurchase = (pid) => {
   try {
@@ -1651,24 +1752,43 @@ window.showImpact = (allow) => {
 };
 window.confirmPurchaseEdit = () => { try { const { pid, patch, allow } = window._pp; E.applyPurchaseEdit(S, pid, patch, { allowClosed: allow }); save(); closeSheet(); toast('Compra atualizada'); render(); } catch (e) { toast(e.message); } };
 window.deletePurchase = (pid) => {
-  const pv = E.previewPurchaseCancel(S, pid); if (pv.blocked) return notice('Não é possível excluir', pv.blocked, () => openPurchase(pid));
-  ask(`Excluir esta compra? ${pv.count} parcela${pv.count === 1 ? '' : 's'}, somando ${brl(pv.totalCents)}, deixa${pv.count === 1 ? '' : 'm'} de contar nas faturas. O registro continua no histórico.${pv.closed.length ? ' Atenção: há parcela em fatura já fechada.' : ''}`, () => { try { E.cancelPurchase(S, pid, { allowClosed: true }); save(); closeSheet(); toast('Compra excluída'); render(); } catch (e) { toast(e.message); } }, 'Excluir compra');
+  const pv = E.previewPurchaseDelete(S, pid); if (pv.blocked) return notice('Não é possível excluir', pv.blocked, () => openPurchase(pid));
+  ask(`Excluir esta compra por completo? ${pv.count} parcela${pv.count === 1 ? '' : 's'}${pv.refunds ? ' e ' + pv.refunds + ' estorno' + (pv.refunds === 1 ? '' : 's') : ''} somem das faturas e do histórico de gastos, sem deixar valor nenhum. Isso não pode ser desfeito.${pv.closed ? ' Atenção: há parcela em fatura já fechada.' : ''}`, () => { try { E.deletePurchase(S, pid, { allowClosed: true }); save(); closeSheet(); toast('Compra excluída por completo'); render(); } catch (e) { toast(e.message); } }, 'Excluir por completo');
 };
 window.openRefund = (pid) => { const left = E.refundable(S, pid); if (left <= 0) return notice('Sem saldo para estorno', 'Esta compra já foi estornada por inteiro.', () => openPurchase(pid)); sheet(`<h2>Registrar estorno</h2><p class="lead">O valor volta como crédito na fatura e reduz o gasto. Não mexe no saldo das suas contas. Restam ${brl(left)} para estornar.</p>${F('Valor estornado', `<input id="rf-v" inputmode="decimal" value="${moneyIn(left)}">`)}${F('Data do estorno', `<input id="rf-d" type="date" value="${E.today()}">`)}<div style="height:22px"></div><button class="btn" onclick="saveRefund('${pid}')">Registrar estorno</button><div style="height:10px"></div><button class="btn ghost" onclick="openPurchase('${pid}')">Voltar</button>`); };
 window.saveRefund = (pid) => { try { E.refundPurchase(S, pid, { amountCents: E.toCents(val('rf-v')), date: val('rf-d') }); save(); closeSheet(); toast('Estorno registrado'); render(); } catch (e) { toast(e.message); } };
 
 let projDays = 30;
+function catSummary() {
+  const spent = E.byCategory(S, month, ctx()), bs = E.budgetStatus(S, month, ctx());
+  const cats = S.categories.filter((c) => c.kind === 'expense'), lim = (c) => S.budgets[month + '|' + c.id] || 0;
+  const list = cats.filter((c) => lim(c) || spent[c.id] > 0).sort((x, y) => (spent[y.id] || 0) - (spent[x.id] || 0));
+  const totS = cats.reduce((t, c) => t + (spent[c.id] || 0), 0), totL = cats.reduce((t, c) => t + lim(c), 0), left = totL - totS;
+  const planCat = E.planCategoryBudgets(S), canFill = E.planItems(S).length && Object.keys(planCat).some((c) => S.budgets[month + '|' + c] !== planCat[c]);
+  const row = (c) => { const used = spent[c.id] || 0, b = lim(c), pct = b ? Math.round(used * 100 / b) : 0, over = b && used > b;
+    return `<div class="row" onclick="setBudget('${c.id}')"><div class="sq">${catIcon(c.id)}</div><div class="m"><b>${esc(c.name)}</b>${b ? `<div class="bar"><i style="width:${Math.min(100, pct)}%;${pct >= 100 ? 'background:var(--bad)' : pct >= 70 ? 'background:var(--warn)' : ''}"></i></div><small>${brl(used)} de ${brl(b)} · ${pct}%</small>` : `<small>${brl(used)} gastos · sem limite</small>`}</div>${b ? `<div class="a ${over ? 'bad' : ''}">${over ? '−' + brl(used - b) : brl(b - used)}<small style="display:block;font-size:11px;font-weight:700;color:var(--mut)">${over ? 'acima' : 'resta'}</small></div>` : ic('chevR', 'chev')}</div>`; };
+  const rest = cats.filter((c) => !list.includes(c));
+  return `<div class="eyebrow">Gasto por categoria<small>${MONTHS[+month.slice(5) - 1]}</small></div>${monthPicker()}
+  <div class="card catsum"><div class="mini" style="padding-top:14px"><div><small>Gasto</small><b>${brl(totS)}</b></div><div><small>${left < 0 ? 'Acima do limite' : 'Ainda pode gastar'}</small><b class="${left < 0 ? 'neg' : 'pos'}">${totL ? brl(Math.abs(left)) : '—'}</b></div></div>
+  ${list.length ? list.map(row).join('') : `<div class="empty" style="padding:18px">Nenhum gasto neste mês ainda.</div>`}
+  ${rest.length ? `<div style="padding:8px 18px 14px"><button class="link" style="padding:0" onclick="openMoreCats()">+ Definir limite em outra categoria</button></div>` : ''}</div>
+  ${canFill ? `<button class="btn ghost" style="margin-top:12px" onclick="fillBudgetsFromPlan()">Preencher limites com o meu orçamento</button>` : ''}
+  <div class="foot" style="text-align:left">Avisamos quando uma categoria chegar a 70%, 90% e 100% do limite. Toque numa categoria para ajustar.</div>`;
+}
+window.fillBudgetsFromPlan = () => ask('Vou preencher o limite de cada categoria com a soma do seu orçamento (contas fixas e gastos variáveis dos dois recebimentos), neste mês e nos próximos 11. Limites que você já definiu não são alterados.', () => { const n = E.planFillBudgets(S, month, 12); save(); toast(n ? 'Limites preenchidos' : 'Nada novo para preencher'); render(); }, 'Preencher');
+window.openMoreCats = () => { const rest = S.categories.filter((c) => c.kind === 'expense' && !S.budgets[month + '|' + c.id] && !(E.byCategory(S, month, ctx())[c.id] > 0)); sheet(`<h2>Escolha a categoria</h2><div class="card" style="margin:0">${rest.map((c) => `<div class="row" onclick="setBudget('${c.id}')"><div class="sq">${catIcon(c.id)}</div><div class="m"><b>${esc(c.name)}</b></div>${ic('chevR', 'chev')}</div>`).join('')}</div>`); };
 function vPlan() {
-  const bs = E.budgetStatus(S, month, ctx()), n = projDays, proj = E.projection(S, n, ctx());
+  const n = projDays, proj = E.projection(S, n, ctx());
   const min = Math.min(...proj.map((p) => p.balanceCents)), neg = proj.find((p) => p.balanceCents < 0), last = proj[proj.length - 1].balanceCents;
   const W = 320, H = 130, vals = proj.map((p) => p.balanceCents), lo = Math.min(0, ...vals), hi = Math.max(1, ...vals), X = (i) => i / n * W, Y = (v) => H - (v - lo) / (hi - lo || 1) * (H - 16) - 8;
   const pts = proj.map((p, i) => X(i) + ',' + Y(p.balanceCents)).join(' ');
-  return `${topbar()}${pageH('Planejamento', 'Veja o que vem pela frente e defina limites de gasto.')}
+  return `${topbar()}${pageH('Planejamento', 'Quanto você gastou em cada categoria e o que vem pela frente.')}
+  ${catSummary()}
+  <div class="eyebrow" style="margin-top:26px">Projeção do saldo</div>
   <div class="card pad"><div class="lead" style="margin:0">Saldo projetado em ${n} dias</div><div style="margin:6px 0 0">${money(last)}</div>
   <div class="rng">${[7, 15, 30, 60, 90].map((d) => `<button class="${n === d ? 'on' : ''}" onclick="projDays=${d};render()">${d}d</button>`).join('')}</div>
   <svg viewBox="0 0 ${W} ${H}" width="100%" style="margin:8px 0"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c1)" stop-opacity=".45"/><stop offset="1" style="stop-color:var(--c1)" stop-opacity="0"/></linearGradient></defs>${[0, .25, .5, .75, 1].map((f) => `<line x1="0" x2="${W}" y1="${8 + f * (H - 16)}" y2="${8 + f * (H - 16)}" stroke="var(--line)" stroke-dasharray="1 5" stroke-linecap="round"/>`).join('')}<line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--bad)" stroke-opacity=".5" stroke-dasharray="4 4"/><polygon fill="url(#ga)" points="0,${H} ${pts} ${W},${H}"/><polyline fill="none" stroke="var(--tx)" stroke-width="2.4" stroke-linejoin="round" points="${pts}"/></svg>
-  <div style="font-size:14px;font-weight:700" class="${neg ? 'neg' : 'pos'}">${neg ? 'Atenção: saldo negativo previsto em ' + fd(neg.date) + '.' : 'Saldo positivo no período. Menor ponto: ' + brl(min) + '.'}</div></div>
-  <div class="eyebrow">Orçamento do mês</div>${monthPicker()}<div class="card">${S.categories.filter((c) => c.kind === 'expense').map((c) => { const b = S.budgets[month + '|' + c.id], st = bs.find((x) => x.categoryId === c.id); return `<div class="row" onclick="setBudget('${c.id}')"><div class="sq">${catIcon(c.id)}</div><div class="m"><b>${esc(c.name)}</b>${b ? `<div class="bar"><i style="width:${Math.min(100, st.pct)}%;${st.pct >= 100 ? 'background:var(--bad)' : st.pct >= 70 ? 'background:var(--warn)' : ''}"></i></div><small>${brl(st.usedCents)} de ${brl(b)} · ${st.pct}%</small>` : '<small>Toque para definir um limite</small>'}</div>${ic('chevR', 'chev')}</div>`; }).join('')}</div><div class="foot" style="text-align:left">Avisamos quando uma categoria chegar a 70%, 90% e 100% do limite.</div>`;
+  <div style="font-size:14px;font-weight:700" class="${neg ? 'neg' : 'pos'}">${neg ? 'Atenção: saldo negativo previsto em ' + fd(neg.date) + '.' : 'Saldo positivo no período. Menor ponto: ' + brl(min) + '.'}</div></div>`;
 }
 window.setBudget = (cid) => sheet(`<h2>${esc(catName(cid))}</h2><p class="lead">Limite de gasto para ${MONTHS[+month.slice(5) - 1].toLowerCase()}.</p>${F('Quanto quer gastar?', `<input id="b-v" inputmode="decimal" placeholder="R$ 0,00" value="${moneyIn(S.budgets[month + '|' + cid])}">`)}<div style="height:22px"></div><button class="btn" onclick="S.budgets['${month}|${cid}']=E.toCents(val('b-v'));save();closeSheet();render()">Salvar</button>`);
 
