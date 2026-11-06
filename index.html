@@ -78,6 +78,7 @@ details.how{margin-top:12px;font-size:13px;color:var(--mut);line-height:1.55;fon
 .bar{height:7px;border-radius:99px;background:var(--seg);overflow:hidden;margin-top:9px}.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pri),var(--grad2))}
 .mpick{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.mpick b{font-weight:800;font-size:17px}
 .mpick button{width:42px;height:42px;border-radius:50%;border:0;background:var(--seg);color:var(--tx);display:grid;place-items:center;cursor:pointer}
+.hzchips{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none;margin:0 -2px}.hzchips::-webkit-scrollbar{display:none}.hzchips.sm{margin-top:-4px}.hzl{flex:none;font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}.hzc{flex:none;display:inline-flex;align-items:center;gap:7px;background:var(--seg);color:var(--tx);border:1.5px solid transparent;border-radius:999px;padding:8px 13px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}.hzc i{width:10px;height:10px;border-radius:50%;background:var(--hzc,var(--mut))}.hzc small{color:var(--mut);font-weight:800;font-size:12.5px}.hzc.on{border-color:var(--hzc,var(--link));background:var(--soft)}.hzh{display:flex;align-items:center;gap:8px;padding:14px 16px 8px}.hzh i{width:11px;height:11px;border-radius:50%;background:var(--hzc);flex:none}.hzh b{font-size:13px;text-transform:uppercase;letter-spacing:.07em}.hzh span{color:var(--mut);font-size:12px;font-weight:600}.hzh em{margin-left:auto;font-style:normal;font-size:12.5px;font-weight:800;color:var(--mut);white-space:nowrap}.hz{border-left:4px solid var(--hzc);margin-left:12px;border-radius:2px}
 .grp{font-size:12px;font-weight:800;color:var(--mut);padding:14px 16px 0;text-transform:uppercase;letter-spacing:.08em}
 .creditcard{background:var(--cc);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:26px;padding:22px;margin-bottom:12px;min-height:180px;display:flex;flex-direction:column;justify-content:space-between}
 .creditcard .n{font-size:15px;font-weight:700;opacity:.9}.creditcard .v{font-size:36px;font-weight:800;letter-spacing:-1.5px;margin-top:6px}.creditcard small{opacity:.85;font-weight:600}
@@ -426,6 +427,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
         if (due < r.startDate) continue;
         if (s.tx.some((t) => t.recurrenceId === r.id && t.dueDate === due)) continue; // nunca duplica
         if (r.planItemId && s.tx.some((t) => t.planItemId === r.planItemId && t.dueDate === due && t.kind === 'expense')) continue; // já lançada pelo orçamento
+        if (s.tx.some((t) => t.status !== 'cancelled' && t.kind === r.kind && t.dueDate === due && !t.cardId && nrm(t.desc) === nrm(r.desc))) continue; // já existe a mesma conta nesta data
         const t = Object.assign(base(s, { desc: r.desc, categoryId: r.categoryId, context: r.context, date: due, dueDate: due }), { kind: r.kind, amountCents: r.amountCents, accountId: r.accountId, recurrenceId: r.id, method: 'auto_debit' });
         if (r.planItemId) t.planItemId = r.planItemId;
         if (r.fundSlot && r.kind === 'expense') t.fund = E.fundForSlot(s, due, r.fundSlot);
@@ -1010,6 +1012,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
         let due = ym + '-' + pad(Math.min(i.dueDay, E.daysInMonth(+ym.slice(0, 4), +ym.slice(5, 7))));
         if (due < startD) { const n = E.addMonths(ym + '-01', 1); due = n.slice(0, 7) + '-' + pad(Math.min(i.dueDay, E.daysInMonth(+n.slice(0, 4), +n.slice(5, 7)))); }
         if (s.tx.some((t) => t.planItemId === i.id && t.dueDate === due && t.kind === 'expense')) { skipped.push(i.name); return; }
+        if (s.tx.some((t) => t.kind === 'expense' && t.status !== 'cancelled' && !t.cardId && t.dueDate && t.dueDate.slice(0, 7) === due.slice(0, 7) && nrm(t.desc) === nrm(i.name))) { skipped.push(i.name); return; }   // já existe nesse mês
         const [t] = E.addExpense(s, { desc: i.name, amountCents: i.amountCents, categoryId: i.categoryId || 'e_Outros', method: 'pix', accountId, date: due, dueDate: due, paid: false, fund: pk, context, planItemId: i.id });
         (t.history = t.history || []).push({ at: new Date().toISOString(), what: 'criada a partir do orçamento' }); made.push(t);
       });
@@ -1059,6 +1062,8 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     const made = [], skipped = [];
     E.planItems(s).filter((i) => i.kind === 'fixed' && i.dueDay).forEach((i) => {
       if (s.recurrences.some((r) => r.planItemId === i.id && !r.ended)) { skipped.push(i.name); return; }
+      const man = s.recurrences.find((r) => !r.ended && !r.planItemId && r.kind === 'expense' && nrm(r.desc) === nrm(i.name));
+      if (man) { man.planItemId = i.id; if (!man.fundSlot) man.fundSlot = i.slot; s.tx.filter((t) => t.recurrenceId === man.id && !t.planItemId).forEach((t) => { t.planItemId = i.id; }); skipped.push(i.name); return; }   // já existe uma conta mensal igual: só ligamos ao orçamento
       let start = dueIn(today.slice(0, 7), i.dueDay);
       if (start < today && !includePast) start = dueIn(E.addMonths(today.slice(0, 8) + '01', 1).slice(0, 7), i.dueDay);
       made.push(E.addRecurring(s, { kind: 'expense', desc: i.name, amountCents: i.amountCents, accountId, categoryId: i.categoryId || 'e_Outros', day: i.dueDay, context, startDate: start, fundSlot: i.slot, planItemId: i.id, today }));
@@ -1167,6 +1172,51 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     s.cards.forEach((c) => { if (snap.limits[c.id] !== undefined && !c.limitCents) c.limitCents = snap.limits[c.id]; });
     (s.log = s.log || []).push({ at: new Date().toISOString(), what: 'limpeza dos cartões desfeita' });
     return snap.tx.length;
+  };
+
+  // ───── 7) Itens repetidos: achar e corrigir (nada é apagado: o repetido é cancelado/encerrado e dá para desfazer)
+  const dupKeep = (arr) => arr.slice().sort((a, b) => (b.planItemId ? 1 : 0) - (a.planItemId ? 1 : 0) || (b.recurrenceId ? 1 : 0) - (a.recurrenceId ? 1 : 0) || (s0idx.get(a) - s0idx.get(b)))[0];
+  let s0idx = new Map();
+  E.findDuplicates = (s, ctx = 'all') => {
+    s0idx = new Map(); s.tx.forEach((t, i) => s0idx.set(t, i)); s.recurrences.forEach((r, i) => s0idx.set(r, i)); planOf(s).items.forEach((x, i) => s0idx.set(x, i));
+    const out = { recurrences: [], bills: [], planItems: [], total: 0 };
+    const grp = (arr, keyf) => { const m = {}; arr.forEach((x) => { const k = keyf(x); (m[k] = m[k] || []).push(x); }); return Object.values(m).filter((g) => g.length > 1); };
+    // contas mensais iguais (mesmo nome e tipo)
+    grp(s.recurrences.filter((r) => !r.ended && (ctx === 'all' || r.context === ctx)), (r) => r.kind + '|' + nrm(r.desc)).forEach((g) => { const keep = dupKeep(g); out.recurrences.push({ name: keep.desc, keep, drop: g.filter((x) => x !== keep) }); });
+    // itens do orçamento repetidos
+    grp(planOf(s).items.filter((i) => i.active !== false), (i) => nrm(i.name) + '|' + i.slot).forEach((g) => { const keep = dupKeep(g); out.planItems.push({ name: keep.name, keep, drop: g.filter((x) => x !== keep) }); });
+    // contas (a pagar/receber) iguais: mesmo nome e tipo no mesmo mês, com o mesmo vencimento ou o mesmo valor
+    const droppedByRec = new Set(); out.recurrences.forEach((x) => x.drop.forEach((r) => droppedByRec.add(r.id)));
+    const cand = s.tx.filter((t) => t.status !== 'cancelled' && (t.kind === 'expense' || t.kind === 'income') && !t.cardId && t.dueDate && (ctx === 'all' || t.context === ctx) && !(t.recurrenceId && droppedByRec.has(t.recurrenceId) && t.status === 'pending'));
+    grp(cand, (t) => t.kind + '|' + nrm(t.desc) + '|' + t.dueDate.slice(0, 7)).forEach((g) => {
+      const par = g.map((_, i) => i), f = (i) => (par[i] === i ? i : (par[i] = f(par[i])));
+      for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) if (g[i].dueDate === g[j].dueDate || g[i].amountCents === g[j].amountCents) par[f(i)] = f(j);
+      const cl = {}; g.forEach((t, i) => { (cl[f(i)] = cl[f(i)] || []).push(t); });
+      Object.values(cl).filter((c) => c.length > 1).forEach((c) => {
+        const paid = c.filter((t) => t.status === 'paid'), pend = c.filter((t) => t.status === 'pending'); if (!pend.length) return;
+        const keep = paid.length ? paid[0] : dupKeep(pend), drop = pend.filter((t) => t !== keep);
+        if (drop.length) out.bills.push({ name: keep.desc, keep, drop });
+      });
+    });
+    out.total = out.recurrences.reduce((a, x) => a + x.drop.length, 0) + out.bills.reduce((a, x) => a + x.drop.length, 0) + out.planItems.reduce((a, x) => a + x.drop.length, 0);
+    return out;
+  };
+  E.fixDuplicates = (s, ctx = 'all', today = E.today()) => {
+    const d = E.findDuplicates(s, ctx), undo = { rec: [], tx: [], items: [] }, pendBefore = new Set(s.tx.filter((t) => t.status === 'pending').map((t) => t.id));
+    d.recurrences.forEach((x) => x.drop.forEach((r) => { E.stopRecurring(s, r.id, today); undo.rec.push(r.id); }));
+    d.planItems.forEach((x) => x.drop.forEach((i) => { i.active = false; undo.items.push(i.id); }));
+    if (d.planItems.length) E.planSyncBills(s, today);
+    s.tx.filter((t) => pendBefore.has(t.id) && t.status === 'cancelled').forEach((t) => { undo.tx.push(t.id); hist(t, 'repetida: cancelada na verificação'); });
+    const d2 = E.findDuplicates(s, ctx);     // o que sobrou depois de encerrar as contas mensais repetidas
+    d2.bills.forEach((x) => x.drop.forEach((t) => { t.status = 'cancelled'; hist(t, 'repetida: cancelada na verificação'); undo.tx.push(t.id); }));
+    (s.log = s.log || []).push({ at: new Date().toISOString(), what: `verificação de repetidos: ${undo.rec.length} contas mensais, ${undo.tx.length} contas, ${undo.items.length} itens do orçamento` });
+    return { recurrences: undo.rec.length, bills: undo.tx.length, planItems: undo.items.length, undo };
+  };
+  E.undoFixDuplicates = (s, undo) => {
+    let n = 0; s.recurrences.filter((r) => undo.rec.includes(r.id)).forEach((r) => { r.ended = false; });
+    s.tx.filter((t) => undo.tx.includes(t.id) && t.status === 'cancelled').forEach((t) => { t.status = 'pending'; hist(t, 'restaurada (verificação desfeita)'); n++; });
+    planOf(s).items.filter((i) => undo.items.includes(i.id)).forEach((i) => { i.active = true; });
+    return n;
   };
 
   if (typeof module !== 'undefined') module.exports = E; else root.FC = E;
@@ -1707,18 +1757,59 @@ window.openRecItem = (id) => {
 };
 window.saveRecItem = (id) => { try { const n = E.editRecurringAmount(S, id, E.toCents(val('rv-v'))); save(); closeSheet(); toast(n + ' contas futuras atualizadas'); render(); } catch (e) { toast(e.message); } };
 window.stopRecItem = (id) => ask('Parar esta conta mensal? As contas futuras ainda não pagas serão canceladas. O que já foi pago continua no histórico.', () => { const n = E.stopRecurring(S, id); save(); closeSheet(); toast(n + ' contas futuras canceladas'); render(); }, 'Parar');
+// Prazos: cada conta cai em uma faixa de vencimento, com cor própria
+const HZ = [
+  { k: 'late', n: 'Atrasadas', d: 'já venceram', c: 'var(--bad)' },
+  { k: 'week', n: 'Esta semana', d: 'até 7 dias', c: 'var(--warn)' },
+  { k: 'fort', n: 'Quinzena', d: '8 a 15 dias', c: 'var(--link)' },
+  { k: 'month', n: 'Este mês', d: '16 a 30 dias', c: 'var(--c2)' },
+  { k: 'later', n: 'Mais adiante', d: 'depois de 30 dias', c: 'var(--mut)' }];
+let billHz = 'all', billFund = 'all';
+const hzOf = (t, today) => { const d = Math.round((new Date(t.dueDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000); return d < 0 ? 'late' : d <= 7 ? 'week' : d <= 15 ? 'fort' : d <= 30 ? 'month' : 'later'; };
+const fundOfTx = (t) => t.fund ? 'd' + E.parsePk(t.fund).slot : 'none';
+const hzCount = (arr, today) => { const m = { all: arr.length }; HZ.forEach((h) => { m[h.k] = 0; }); arr.forEach((t) => { m[hzOf(t, today)]++; }); return m; };
+function hzBlock(arr, today, withFund, emptyHtml) {
+  if (!arr.length) return `<div class="card">${emptyHtml}</div>`;
+  const pd = E.cfg(S).payDays;
+  let list = arr;
+  if (withFund && billFund !== 'all') list = arr.filter((t) => fundOfTx(t) === billFund);
+  const cnt = hzCount(list, today), cntAll = hzCount(arr, today);
+  if (billHz !== 'all' && !cnt[billHz]) billHz = 'all';
+  const chips = `<div class="hzchips"><button class="hzc ${billHz === 'all' ? 'on' : ''}" onclick="billHz='all';render()">Todas <small>${cnt.all}</small></button>${HZ.filter((h) => cnt[h.k] || billHz === h.k).map((h) => `<button class="hzc ${billHz === h.k ? 'on' : ''}" style="--hzc:${h.c}" onclick="billHz='${h.k}';render()"><i></i>${h.n} <small>${cnt[h.k]}</small></button>`).join('')}</div>`;
+  const fcnt = { all: arr.length, d1: 0, d2: 0, none: 0 }; arr.forEach((t) => { fcnt[fundOfTx(t)]++; });
+  const fchips = withFund && (fcnt.d1 || fcnt.d2) ? `<div class="hzchips sm"><span class="hzl">Paga com</span>${[['all', 'Todos'], ['d1', 'Dia ' + pd[0]], ['d2', 'Dia ' + pd[1]], ['none', 'Sem vínculo']].filter(([k]) => k === 'all' || fcnt[k]).map(([k, l]) => `<button class="hzc ${billFund === k ? 'on' : ''}" onclick="billFund='${k}';render()">${l} <small>${fcnt[k]}</small></button>`).join('')}</div>` : '';
+  const groups = HZ.filter((h) => (billHz === 'all' || billHz === h.k) && cnt[h.k]).map((h) => {
+    const rows = list.filter((t) => hzOf(t, today) === h.k), tot = rows.reduce((x, t) => x + t.amountCents, 0), collapsed = billHz === 'all' && h.k === 'later' && !showAllBills;
+    return `<div class="hzh" style="--hzc:${h.c}"><i></i><b>${h.n}</b><span>${h.d}</span><em>${rows.length} · ${brl(tot)}</em></div>${collapsed ? `<div style="padding:2px 16px 14px"><button class="link" style="padding:0" onclick="showAllBills=true;render()">Mostrar as ${rows.length} contas mais adiante</button></div>` : `<div class="hz" style="--hzc:${h.c}">${rows.map(txRow).join('')}</div>`}`;
+  }).join('');
+  const hidden = billHz === 'all' && showAllBills && cnt.later ? `<div style="padding:0 16px 14px"><button class="link" style="padding:0" onclick="showAllBills=false;render()">Esconder as contas mais adiante</button></div>` : '';
+  return `${chips}${fchips}<div class="card">${groups || empty('check', 'Nada nesta combinação', 'Troque o filtro acima.')}${hidden}</div>`;
+}
+const dupNote = () => {
+  const d = E.findDuplicates(S, ctx()), u = (() => { try { const x = lsGet('fc_dup_undo'); return x ? JSON.parse(x) : null; } catch (e) { return null; } })();
+  return (d.total ? `<div class="note warn" style="margin:0 0 12px"><b>${d.total} item${d.total > 1 ? 'ns' : ''} repetido${d.total > 1 ? 's' : ''} encontrado${d.total > 1 ? 's' : ''}.</b> Ex.: ${esc([...d.recurrences, ...d.bills, ...d.planItems][0].name)}.<br><button class="link" style="padding:6px 0 0" onclick="openDups()">Ver e corrigir</button></div>` : '') + (u ? `<div style="margin:-4px 0 10px"><button class="link" style="padding:0" onclick="undoDups()">${ic('undo')}Desfazer a última correção de repetidos</button></div>` : '');
+};
+window.openDups = () => {
+  const d = E.findDuplicates(S, ctx()), pd = E.cfg(S).payDays;
+  const blk = (title, arr, text) => arr.length ? `<div class="eyebrow" style="margin-top:6px">${title} · ${arr.length}</div><div class="card" style="margin:0 0 10px">${arr.map((x) => `<div class="row" style="cursor:default"><div class="m"><b>${esc(x.name)}</b><small>${text(x)}</small></div></div>`).join('')}</div>` : '';
+  sheet(`<h2>Itens repetidos</h2><p class="lead">Mantemos a melhor cópia de cada um (a já paga, ou a ligada ao orçamento ou à conta mensal) e cancelamos as outras. Nada é apagado e dá para desfazer.</p>
+  ${blk('Contas mensais', d.recurrences, (x) => `${x.drop.length + 1} cópias · mantém a do dia ${x.keep.day}${x.keep.planItemId ? ' (ligada ao orçamento)' : ''}, encerra ${x.drop.length} e cancela as contas futuras que ela gerou`)}
+  ${blk('Contas a pagar/receber', d.bills, (x) => `${x.drop.length + 1} cópias em ${fd(x.keep.dueDate)} · mantém ${x.keep.status === 'paid' ? 'a paga' : '1'}, cancela ${x.drop.length} (${brl(x.drop[0].amountCents)})`)}
+  ${blk('Itens do orçamento', d.planItems, (x) => `${x.drop.length + 1} cópias no dia ${pd[x.keep.slot - 1]} · tira ${x.drop.length} do orçamento`)}
+  <div style="height:12px"></div><button class="btn" onclick="doFixDups()">Corrigir repetidos</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Agora não</button>`);
+};
+window.doFixDups = () => { try { const r = E.fixDuplicates(S, ctx()); try { lsSet('fc_dup_undo', JSON.stringify(r.undo)); } catch (e) {} save(); closeSheet(); toast(`Corrigido: ${r.recurrences + r.bills + r.planItems} repetidos`); render(); } catch (e) { toast(e.message); } };
+window.undoDups = () => ask('Desfazer a última correção? As contas e contas mensais repetidas voltam como estavam.', () => { try { const u = JSON.parse(lsGet('fc_dup_undo')); const n = E.undoFixDuplicates(S, u); localStorage.removeItem('fc_dup_undo'); save(); toast('Correção desfeita'); render(); } catch (e) { toast('Nada para desfazer'); } }, 'Desfazer');
 function vContas() {
   const L = listCtx().filter((t) => t.status === 'pending' && !t.cardId && t.kind !== 'transfer'), today = E.today();
   const pay = L.filter((t) => t.kind === 'expense').sort((a, b) => a.dueDate.localeCompare(b.dueDate)), rec = L.filter((t) => t.kind === 'income').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const recs = S.recurrences.filter((r) => !r.ended && (ctx() === 'all' || r.context === ctx())), cand = E.planRecurrenceCandidates(S).length, noPlan = !E.planItems(S).length;
   const seg = `<div class="seg">${[['pagar', 'A pagar'], ['receber', 'A receber'], ['rec', 'Mensais']].map(([k, l]) => `<button class="${sub === k ? 'on' : ''}" onclick="sub='${k}';render()">${l}</button>`).join('')}</div>`;
-  const hiddenN = showAllBills ? 0 : pay.filter((t) => t.dueDate > E.addDays(today, 45)).length;
-  const groups = (arr) => { const g = [['Atrasadas', arr.filter((t) => t.dueDate < today)], ['Esta semana', arr.filter((t) => t.dueDate >= today && t.dueDate <= E.addDays(today, 7))], ['Mais adiante', arr.filter((t) => t.dueDate > E.addDays(today, 7) && (showAllBills || t.dueDate <= E.addDays(today, 45)))]].filter((x) => x[1].length); return g.map(([n, a]) => `<div class="grp">${n}</div>${a.map(txRow).join('')}`).join(''); };
   let body = '', lead = '';
-  if (sub === 'pagar') { const near = pay.filter((t) => showAllBills || t.dueDate <= E.addDays(today, 45)), tot = near.reduce((a, t) => a + t.amountCents, 0); lead = pay.length ? `${near.length} conta${near.length > 1 ? 's' : ''} · ${brl(tot)} ${showAllBills ? 'no total' : 'nos próximos 45 dias'}` : 'Nada pendente.'; body = `<div class="card">${pay.length ? groups(pay) : empty('check', 'Nenhuma conta a pagar', 'Use o botão + para adicionar uma despesa com vencimento.')}</div>${hiddenN ? `<button class="link" onclick="showAllBills=true;render()">Mostrar as outras ${hiddenN} contas mais adiante</button>` : showAllBills ? `<button class="link" onclick="showAllBills=false;render()">Mostrar só os próximos 45 dias</button>` : ''}`; }
-  if (sub === 'receber') { const tot = rec.reduce((a, t) => a + t.amountCents, 0); lead = rec.length ? `${rec.length} valor${rec.length > 1 ? 'es' : ''} · ${brl(tot)} a receber` : 'Nada previsto.'; body = `<div class="card">${rec.length ? groups(rec) : empty('down', 'Nada a receber', 'Registre uma entrada marcando “Ainda não” em “Já caiu na conta?”.')}</div>`; }
+  if (sub === 'pagar') { const w = pay.filter((t) => hzOf(t, today) !== 'later'), tot = w.reduce((a, t) => a + t.amountCents, 0); lead = pay.length ? `${w.length} conta${w.length !== 1 ? 's' : ''} · ${brl(tot)} nos próximos 30 dias` : 'Nada pendente.'; body = hzBlock(pay, today, true, empty('check', 'Nenhuma conta a pagar', 'Use o botão + para adicionar uma despesa com vencimento.')); }
+  if (sub === 'receber') { const tot = rec.reduce((a, t) => a + t.amountCents, 0); lead = rec.length ? `${rec.length} valor${rec.length > 1 ? 'es' : ''} · ${brl(tot)} a receber` : 'Nada previsto.'; body = hzBlock(rec, today, false, empty('down', 'Nada a receber', 'Registre uma entrada marcando “Ainda não” em “Já caiu na conta?”.')); }
   if (sub === 'rec') { lead = 'Contas que se repetem todo mês.'; body = `<div class="card">${recs.length ? recs.slice().sort((a, b) => a.day - b.day).map((r) => `<div class="row" onclick="openRecItem('${r.id}')"><div class="sq">${ic('repeat')}</div><div class="m"><b>${esc(r.desc)}</b><small>Todo dia ${r.day}${r.kind === 'income' ? ' · Entrada' : ''}${r.fundSlot ? ' · paga com o dia ' + E.cfg(S).payDays[r.fundSlot - 1] : ''}</small></div><div class="a">${brl(r.amountCents)}</div></div>`).join('') : empty('repeat', 'Nenhuma conta mensal', 'Aluguel, internet, escola... programe uma vez só.')}</div>${cand || noPlan ? `<button class="btn" style="margin:14px 0 4px" onclick="openRecFromPlan()">Incluir as contas da minha planilha</button>` : ''}<button class="link" onclick="openRecurring()">+ Programar conta mensal</button>`; }
-  return `${topbar()}${pageH('Contas', lead)}${seg}${body}`;
+  return `${topbar()}${pageH('Contas', lead)}${dupNote()}${seg}${body}`;
 }
 
 function vBancos() {
