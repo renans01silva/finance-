@@ -1219,6 +1219,35 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit;font-weight:600}
     return n;
   };
 
+  // ───── 8) casal: resumo compartilhável (sem descrições de compras nem dados de cartão) e consolidação
+  E.coupleMonth = (s, ym, today = E.today()) => {
+    const pd = E.cfg(s).payDays, periods = [1, 2].map((slot) => {
+      const p = E.planPeriod(s, E.pk(ym, slot), 'all');
+      return { slot, day: pd[slot - 1], incomeCents: p.incomeBase, plannedCents: p.plannedTotal, committedCents: p.committedTotal + p.offCents, paidCents: p.paidTotal, balanceCents: p.realBalanceCents };
+    });
+    const by = E.byCategory(s, ym, 'all'), bud = (s.budgets || {});
+    const cats = Object.keys(by).filter((k) => by[k] > 0).map((k) => ({ id: k, name: (s.categories.find((c) => c.id === k) || {}).name || 'Sem categoria', cents: by[k] })).sort((a, b) => b.cents - a.cents);
+    const ms = E.monthSummary(s, ym, 'all', today);
+    return { periods, cats, incomeCents: periods[0].incomeCents + periods[1].incomeCents, plannedCents: periods[0].plannedCents + periods[1].plannedCents, spentCents: ms.spentCents, balanceCents: periods[0].balanceCents + periods[1].balanceCents };
+  };
+  E.coupleSummary = (s, today = E.today()) => {
+    const ym = E.ym(today), months = {};
+    [-1, 0, 1].forEach((d) => { const m = E.addMonths(ym + '-01', d).slice(0, 7); months[m] = E.coupleMonth(s, m, today); });
+    const bills = E.upcoming(s, 45, 'all', today).filter((i) => i.type !== 'income').map((i) => ({ desc: i.type === 'invoice' ? i.desc : i.desc, dueDate: i.dueDate, cents: i.amountCents, overdue: !!i.overdue }));
+    return { v: 1, name: (s.profile && s.profile.name) || '', today, payDays: E.cfg(s).payDays, months, bills, at: new Date().toISOString() };
+  };
+  // junta dois resumos (eu e o par) para um mês
+  E.coupleMerge = (mine, other, ym) => {
+    const a = mine.months[ym], b = other.months[ym];
+    if (!a || !b) return null;
+    const cat = {};
+    [['me', a], ['other', b]].forEach(([w, m]) => m.cats.forEach((c) => { const k = c.name; cat[k] = cat[k] || { name: k, me: 0, other: 0 }; cat[k][w] += c.cents; }));
+    const cats = Object.values(cat).sort((x, y) => (y.me + y.other) - (x.me + x.other));
+    const sum = (k) => a[k] + b[k];
+    const bills = mine.bills.map((x) => ({ ...x, who: 'me' })).concat(other.bills.map((x) => ({ ...x, who: 'other' }))).sort((x, y) => x.dueDate.localeCompare(y.dueDate));
+    return { ym, a, b, cats, incomeCents: sum('incomeCents'), plannedCents: sum('plannedCents'), spentCents: sum('spentCents'), balanceCents: sum('balanceCents'), bills, names: { me: mine.name, other: other.name } };
+  };
+
   if (typeof module !== 'undefined') module.exports = E; else root.FC = E;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -1297,7 +1326,7 @@ async function push() {
       if (!data || !data.length) { pushing = false; return pull(true); }
       cloudVer = data[0].version;
     }
-    dirty = false; syncState = 'ok'; syncAt = hhmm();
+    dirty = false; syncState = 'ok'; syncAt = hhmm(); schedSummary();
   } catch (e) { syncState = navigator.onLine === false ? 'offline' : 'error'; setTimeout(() => { if (dirty) scheduleSync(); }, 15000); }
   pushing = false; softRender();
 }
@@ -1334,11 +1363,11 @@ window.doSignup = async () => {
 };
 async function afterLogin() {
   $('#nav').style.display = ''; syncState = 'syncing';
-  await pull(false);
+  await pull(false); loadCouple();
   if (S.recurrences && S.recurrences.length && E.generateRecurring(S, E.today(), 12)) save();
   render();
 }
-window.doLogout = async () => { await sb.auth.signOut(); user = null; cloudVer = 0; try { localStorage.removeItem(KEY); } catch (e) {} S = E.newState(); fixState(); closeSheet(); renderLogin(); };
+window.doLogout = async () => { await sb.auth.signOut(); user = null; cloudVer = 0; couple = { loaded: false, shares: [], theirs: null, who: 'casal', err: null }; try { localStorage.removeItem(KEY); } catch (e) {} S = E.newState(); fixState(); closeSheet(); renderLogin(); };
 async function bootCloud() {
   sb = window.supabase.createClient(CFG.url, CFG.key);
   const { data } = await sb.auth.getSession();
@@ -1363,7 +1392,7 @@ window.openDrawer = () => {
   const d = document.createElement('div'); d.className = 'drawer-back'; d.id = 'drawer';
   d.innerHTML = `<div class="drawer"><div class="head"><div class="av">${esc(S.profile.name[0].toUpperCase())}</div><div><b>${esc(S.profile.name)}</b><small>Visão: ${CTXN[ctx()]}</small></div><button class="x" onclick="closeDrawer()" aria-label="Fechar">${ic('x')}</button></div>
   <button class="newbtn" onclick="closeDrawer();openPlus()">${ic('plus')}Novo lançamento</button>
-  <h4>Gestão</h4>${it('rec', 'cal', 'Recebimentos')}${it('orc', 'wallet', 'Orçamento')}${it('plan', 'target', 'Planejamento')}${it('rel', 'chart', 'Relatórios')}${it('bancos', 'bank', 'Contas bancárias')}
+  <h4>Gestão</h4>${it('rec', 'cal', 'Recebimentos')}${it('orc', 'wallet', 'Orçamento')}${it('casal', 'users', 'Casal')}${it('plan', 'target', 'Planejamento')}${it('rel', 'chart', 'Relatórios')}${it('bancos', 'bank', 'Contas bancárias')}
   <h4>Visão</h4>${cx('personal', 'Pessoal')}${cx('business', 'Profissional')}${cx('all', 'Consolidado')}
   <h4>Conta e ajuda</h4><button class="it" onclick="closeDrawer();openAppearance()">${ic('brush')}<span class="l">Personalizar aparência</span>${ic('chevR', 'c')}</button><button class="it" onclick="closeDrawer();openSettings()">${ic('sliders')}<span class="l">Configurações</span>${ic('chevR', 'c')}</button><button class="it" onclick="closeDrawer();exportData()">${ic('download')}<span class="l">Backup dos dados</span>${ic('chevR', 'c')}</button></div>`;
   d.addEventListener('click', (e) => { if (e.target === d) closeDrawer(); });
@@ -1585,7 +1614,7 @@ function vInicio() {
   <div class="bal" id="balbox">${balHtml()}</div>
   <div class="qa"><button onclick="openExpense()"><span class="c">${ic('up')}</span>Despesa</button><button onclick="openIncome()"><span class="c">${ic('down')}</span>Entrada</button><button onclick="openTransfer()"><span class="c">${ic('swap')}</span>Transferir</button><button onclick="openNL()"><span class="c">${ic('chat')}</span>Por frase</button></div>
   ${first ? `<div class="glass" style="margin-top:22px"><b style="font-size:17px">Comece por aqui</b><div class="lead" style="margin:6px 0 16px">Cadastre onde seu dinheiro está. Depois é só registrar despesas e entradas.</div><button class="btn light" onclick="openAccount()">Cadastrar primeira conta</button></div>` : ''}
-  ${orcTile()}
+  ${orcTile()}${casalTile()}
   <div class="eyebrow">${view === 'month' ? 'Neste mês' : 'Neste período'}<small>${MONTHS[+month.slice(5) - 1]}</small></div>
   ${seg}${view === 'month' ? monthBlock : periodTiles(E.pk(month, +view))}
   ${m.overdueCents || ins.length ? `<div class="eyebrow">Atenção</div><div class="card">${m.overdueCents ? `<div class="alert bad">${ic('alert')}<span>Você tem ${brl(m.overdueCents)} em contas atrasadas.</span></div>` : ''}${ins.map((i) => `<div class="alert ${i.level === 'bad' ? 'bad' : i.level === 'warn' ? 'warn' : 'info'}">${ic(i.level === 'info' ? 'info' : 'alert')}<span>${esc(i.text)}</span></div>`).join('')}</div>` : ''}
@@ -2017,10 +2046,106 @@ function vRel() {
   <div class="eyebrow">Patrimônio</div><div class="card"><div class="stat"><span>Em contas</span><b>${brl(nw.assetsCents)}</b></div><div class="stat"><span>Faturas em aberto</span><b>−${brl(nw.liabilitiesCents)}</b></div><div class="stat total"><span>Patrimônio líquido</span><b class="${nw.netCents < 0 ? 'neg' : ''}">${brl(nw.netCents)}</b></div></div><div class="foot" style="text-align:left">Investimentos e bens entram em uma próxima fase.</div>`;
 }
 
+
+// ───── casal: resumo do par (só leitura). Os lançamentos de cada um nunca saem da conta do dono.
+let couple = { loaded: false, shares: [], theirs: null, who: 'casal', err: null, busy: false };
+const lc = (x) => String(x || '').toLowerCase();
+const myEmail = () => lc(user && user.email);
+const cOut = () => couple.shares.find((x) => user && x.owner_id === user.id) || null;
+const cIn = () => couple.shares.find((x) => user && x.owner_id !== user.id && lc(x.viewer_email) === myEmail()) || null;
+const partnerEmail = () => { const i = cIn(), o = cOut(); return i ? i.owner_email : o ? o.viewer_email : ''; };
+let sumTimer = null;
+function schedSummary() { clearTimeout(sumTimer); if (!CLOUD || !user || !cOut()) return; sumTimer = setTimeout(pushSummary, 4000); }
+async function pushSummary() {
+  if (!CLOUD || !user) return;
+  try { await sb.from('summaries').upsert({ user_id: user.id, owner_email: user.email, name: S.profile.name, data: E.coupleSummary(S, E.today()), updated_at: new Date().toISOString() }); } catch (e) {}
+}
+async function loadCouple() {
+  if (!CLOUD || !user) return;
+  try {
+    const r = await sb.from('shares').select('*'); if (r.error) throw r.error;
+    couple.shares = r.data || []; couple.theirs = null;
+    const pend = couple.shares.find((x) => !x.accepted && x.owner_id !== user.id && lc(x.viewer_email) === myEmail() && couple.shares.some((o) => o.owner_id === user.id && lc(o.viewer_email) === lc(x.owner_email)));
+    if (pend) { await sb.rpc('accept_share', { p_id: pend.id }); const r2 = await sb.from('shares').select('*'); if (!r2.error) couple.shares = r2.data || []; }
+    const inc = couple.shares.find((x) => x.accepted && x.owner_id !== user.id && lc(x.viewer_email) === myEmail());
+    if (inc) { const s = await sb.from('summaries').select('data').eq('user_id', inc.owner_id).maybeSingle(); if (s.data) couple.theirs = s.data.data; }
+    couple.err = null; if (cOut()) pushSummary();
+  } catch (e) { couple.err = 'Não foi possível carregar o resumo do casal. Confira se o SQL do casal foi executado no Supabase.'; }
+  couple.loaded = true; if (tab === 'casal' && !$('#sheetbg')) render();
+}
+const cName = (w) => w === 'me' ? 'Eu' : ((couple.theirs && couple.theirs.name) || 'Par').split(' ')[0];
+function vCasal() {
+  const head = `${topbar()}${pageH('Casal', 'O resumo de vocês dois, só para ler.', CLOUD && user ? `<button class="link" onclick="openShare()">Compartilhar</button>` : '')}`;
+  if (!CLOUD || !user) return `${head}<div class="card" style="padding:20px"><h3 style="margin:0 0 8px">Entre com sua conta</h3><p class="lead" style="margin:0">O resumo do casal usa o login de cada um. Ele aparece aqui quando você entra com seu e-mail e senha.</p></div>`;
+  if (!couple.loaded) { loadCouple(); return `${head}<div class="card" style="padding:20px"><p class="lead" style="margin:0">Carregando…</p></div>`; }
+  if (couple.err) return `${head}<div class="note bad">${esc(couple.err)}</div><button class="btn ghost" style="margin-top:12px" onclick="couple.loaded=false;render()">Tentar de novo</button>`;
+  const inc = cIn(), out = cOut();
+  const pend = inc && !inc.accepted ? `<div class="card" style="padding:18px"><b style="font-size:16px">${esc(inc.owner_email)} quer compartilhar o resumo com você</b><p class="lead" style="margin:6px 0 14px">Você verá só totais por categoria, renda, saldo e contas a vencer. Nunca as compras.</p><button class="btn" onclick="acceptShare('${inc.id}',true)">Aceitar e compartilhar o meu também</button><div style="height:8px"></div><button class="btn ghost" onclick="acceptShare('${inc.id}',false)">Aceitar sem compartilhar o meu</button><div style="height:8px"></div><button class="btn ghost" onclick="stopShare('${inc.id}')">Recusar</button></div>` : '';
+  if (!couple.theirs) {
+    const wait = out && !out.accepted ? `<div class="card" style="padding:18px"><b style="font-size:16px">Convite enviado</b><p class="lead" style="margin:6px 0 0">Aguardando ${esc(out.viewer_email)} aceitar. Seu par precisa entrar no app com esse e-mail.</p></div>` : '';
+    const accWait = inc && inc.accepted ? `<div class="card" style="padding:18px"><b style="font-size:16px">Aguardando o primeiro resumo</b><p class="lead" style="margin:6px 0 0">${esc(inc.owner_email)} ainda não enviou dados. Peça para abrir o app uma vez.</p></div>` : '';
+    const empty = !pend && !wait && !accWait ? `<div class="card" style="padding:20px"><h3 style="margin:0 0 8px">Veja as finanças dos dois</h3><p class="lead" style="margin:0 0 16px">Convide seu par pelo e-mail. Cada um continua com o próprio login e os próprios dados. Vocês só trocam o resumo, para leitura.</p><button class="btn" onclick="openShare()">Convidar meu par</button></div>` : '';
+    return `${head}${pend}${wait}${accWait}${empty}`;
+  }
+  const mine = E.coupleSummary(S, E.today()), who = couple.who || 'casal', ym = month;
+  const mg = E.coupleMerge(mine, couple.theirs, ym);
+  const seg = `<div class="seg" role="group" aria-label="Quem ver">${[['me', 'Eu'], ['other', cName('other')], ['casal', 'Casal']].map(([k, l]) => `<button class="${who === k ? 'on' : ''}" aria-pressed="${who === k}" onclick="couple.who='${k}';render()">${esc(l)}</button>`).join('')}</div>`;
+  if (!mg) return `${head}${pend}${monthPicker()}${seg}<div class="note">O resumo de ${MONTHS[+ym.slice(5) - 1].toLowerCase()} não está disponível. Ele cobre o mês anterior, o atual e o próximo.</div>`;
+  const pd = mine.payDays, pk = who === 'casal' ? null : (who === 'me' ? mg.a : mg.b);
+  const pdO = (couple.theirs.payDays || pd);
+  const tot = pk ? pk : { incomeCents: mg.incomeCents, plannedCents: mg.plannedCents, spentCents: mg.spentCents, balanceCents: mg.balanceCents };
+  const label = who === 'casal' ? 'Sobra do casal no mês' : 'Sobra de ' + (who === 'me' ? 'você' : cName('other')) + ' no mês';
+  const hero = `<div class="glass sobrar" style="margin-bottom:12px"><div><div class="t">${label}</div><div class="v">${partMoney(tot.balanceCents)}</div><small>Renda ${brl(tot.incomeCents)} · Planejado ${brl(tot.plannedCents)}</small></div></div>`;
+  const per = (m, i) => m.periods[i];
+  let income;
+  if (who === 'casal') {
+    const r = (i) => { const a = per(mg.a, i), b = per(mg.b, i); return `<tr><td>Dia ${a.day}${b.day !== a.day ? ' / ' + b.day : ''}</td><td>${brl(a.incomeCents)}</td><td>${brl(b.incomeCents)}</td><td>${brl(a.incomeCents + b.incomeCents)}</td></tr>`; };
+    income = `<table class="cmp"><thead><tr><th>Renda</th><th>${esc(cName('me'))}</th><th>${esc(cName('other'))}</th><th>Total</th></tr></thead><tbody>${r(0)}${r(1)}<tr class="tot"><td>Mês</td><td>${brl(mg.a.incomeCents)}</td><td>${brl(mg.b.incomeCents)}</td><td>${brl(mg.incomeCents)}</td></tr></tbody></table>`;
+  } else {
+    const m = pk, row = (l, f, cls = '', t = false) => `<tr class="${t ? 'tot' : ''}"><td>${l}</td><td class="${cls}">${brl(f(m.periods[0]))}</td><td class="${cls}">${brl(f(m.periods[1]))}</td><td class="${cls}">${brl(f(m.periods[0]) + f(m.periods[1]))}</td></tr>`;
+    income = `<table class="cmp"><thead><tr><th></th><th>Dia ${m.periods[0].day}</th><th>Dia ${m.periods[1].day}</th><th>Mês</th></tr></thead><tbody>${row('Renda', (p) => p.incomeCents)}${row('Planejado', (p) => p.plannedCents)}${row('Já pago', (p) => p.paidCents, 'pos')}${row('Sobra', (p) => p.balanceCents, '', true)}</tbody></table>`;
+  }
+  const cats = mg.cats.filter((c) => who === 'casal' ? c.me + c.other > 0 : (who === 'me' ? c.me : c.other) > 0).slice(0, 8);
+  const catHtml = !cats.length ? `<div class="alert info">${ic('info')}<span>Ainda não há gastos neste mês.</span></div>` : who === 'casal'
+    ? `<table class="cmp"><thead><tr><th>Categoria</th><th>${esc(cName('me'))}</th><th>${esc(cName('other'))}</th><th>Total</th></tr></thead><tbody>${cats.map((c) => `<tr><td>${esc(c.name)}</td><td>${brl(c.me)}</td><td>${brl(c.other)}</td><td>${brl(c.me + c.other)}</td></tr>`).join('')}<tr class="tot"><td>Gasto</td><td>${brl(mg.a.spentCents)}</td><td>${brl(mg.b.spentCents)}</td><td>${brl(mg.spentCents)}</td></tr></tbody></table>`
+    : `<table class="cmp"><tbody>${cats.map((c) => `<tr><td>${esc(c.name)}</td><td>${brl(who === 'me' ? c.me : c.other)}</td></tr>`).join('')}<tr class="tot"><td>Gasto</td><td>${brl(who === 'me' ? mg.a.spentCents : mg.b.spentCents)}</td></tr></tbody></table>`;
+  const today = E.today(), bl = mg.bills.filter((b) => who === 'casal' || b.who === who).slice(0, 10);
+  const billHtml = !bl.length ? `<div class="alert info">${ic('info')}<span>Nenhuma conta a vencer nos próximos 45 dias.</span></div>` : bl.map((b) => { const z = hzOf({ dueDate: b.dueDate }, today), cls = z === 'late' ? 'bad' : z === 'week' ? 'warn' : ''; return `<div class="row" style="cursor:default"><div class="m"><b>${esc(b.desc)}</b><small class="${cls}">${who === 'casal' ? esc(cName(b.who)) + ' · ' : ''}${z === 'late' ? 'Atrasada · ' : ''}${fd(b.dueDate).slice(0, 5)}</small></div><span class="a ${cls}">${brl(b.cents)}</span></div>`; }).join('');
+  const at = couple.theirs.at ? new Date(couple.theirs.at) : null, hh = at && !isNaN(at) ? at.toTimeString().slice(0, 5) : '';
+  return `${head}${pend}${monthPicker()}${seg}${hero}
+  <div class="eyebrow">Renda por recebimento</div><div class="card">${income}</div>
+  <div class="eyebrow">Gasto por categoria</div><div class="card">${catHtml}</div>
+  <div class="eyebrow">Contas a vencer</div><div class="card">${billHtml}</div>
+  <div class="note" style="display:flex;gap:8px;align-items:center">${ic('eye')}<span>Só leitura. O resumo de ${esc(cName('other'))} foi atualizado ${hh ? 'às ' + hh : 'recentemente'}.</span></div>`;
+}
+window.openShare = () => {
+  const o = cOut(), i = cIn();
+  sheet(`<h2>Compartilhar com meu par</h2>
+  ${o ? `<div class="chg"><span><b>${esc(o.viewer_email)}</b><small>${o.accepted ? 'Vê o seu resumo' : 'Convite enviado, aguardando aceitar'}</small></span><button class="link" onclick="stopShare('${o.id}')">${o.accepted ? 'Parar de compartilhar' : 'Cancelar convite'}</button></div>` : `${F('E-mail do seu par', '<input id="sh-e" type="email" inputmode="email" autocomplete="off" placeholder="nome@email.com">', 'Seu par precisa ter conta no app com esse e-mail.')}<div style="height:12px"></div><button class="btn" onclick="sendInvite()">Enviar convite</button>`}
+  ${i && i.accepted ? `<div class="chg"><span><b>${esc(i.owner_email)}</b><small>Você vê o resumo dele(a)</small></span><button class="link" onclick="stopShare('${i.id}')">Deixar de ver</button></div>` : ''}
+  <h4 style="margin:18px 0 6px">O que seu par vê</h4><p class="lead" style="margin:0">Renda, totais por categoria, saldo e contas a vencer. Não aparecem descrições de compras, valores de cartão nem os lançamentos.</p>`);
+};
+window.sendInvite = async () => {
+  const e = lc(val('sh-e').trim()); if (!/^\S+@\S+\.\S+$/.test(e)) return toast('Informe um e-mail válido.'); if (e === myEmail()) return toast('Use o e-mail do seu par, não o seu.');
+  const r = await sb.from('shares').insert({ owner_id: user.id, owner_email: user.email, viewer_email: e });
+  if (r.error) return toast(String(r.error.code) === '23505' ? 'Você já convidou esse e-mail.' : 'Não foi possível enviar o convite.');
+  await pushSummary(); await loadCouple(); closeSheet(); toast('Convite enviado'); render();
+};
+window.acceptShare = async (id, both) => {
+  const i = couple.shares.find((x) => x.id === id); if (!i) return;
+  const r = await sb.rpc('accept_share', { p_id: id }); if (r.error) return toast('Não foi possível aceitar o convite.');
+  if (both && !cOut()) await sb.from('shares').insert({ owner_id: user.id, owner_email: user.email, viewer_email: lc(i.owner_email) });
+  await pushSummary(); await loadCouple(); toast('Pronto'); render();
+};
+window.stopShare = (id) => ask('Parar este compartilhamento? O resumo deixa de aparecer para a outra pessoa.', async () => { const r = await sb.from('shares').delete().eq('id', id); if (r.error) return toast('Não foi possível parar agora.'); await loadCouple(); closeSheet(); render(); }, 'Parar');
+function casalTile() {
+  if (!CLOUD || !user) return '';
+  return `<button class="glass orcq" onclick="go('casal')"><span class="sq">${ic('users')}</span><span class="t"><b>Casal</b><small>${couple.theirs ? 'Veja o resumo dos dois' : 'Compartilhe o resumo com seu par'}</small></span>${ic('chevR', 'chev')}</button>`;
+}
 function render() {
   if (!CLOUD || user) { $('#nav').style.display = ''; }
-  renderNav(); $('#fab').style.display = tab === 'inicio' ? 'none' : 'grid';
-  $('#app').innerHTML = { inicio: vInicio, mov: vMov, contas: vContas, cartoes: vCartoes, plan: vPlan, rel: vRel, bancos: vBancos, rec: vRec, orc: vOrc }[tab]();
+  renderNav(); $('#fab').style.display = tab === 'inicio' || tab === 'casal' ? 'none' : 'grid';
+  $('#app').innerHTML = { inicio: vInicio, mov: vMov, contas: vContas, cartoes: vCartoes, plan: vPlan, rel: vRel, bancos: vBancos, rec: vRec, orc: vOrc, casal: vCasal }[tab]();
 }
 applyTheme(); initHide();
 if (CFG_SET && !window.supabase) { $('#nav').style.display = 'none'; $('#app').innerHTML = '<div class="login"><h1>Sem conexão</h1><div class="lead">Não foi possível carregar o serviço de login. Verifique a internet e abra o app novamente. Seus dados continuam guardados.</div></div>'; } else if (CLOUD) { renderLoginSoon(); } else { fixState(); syncPref(); runMigrations(); initHide(); if (S.recurrences.length) { E.generateRecurring(S, E.today(), 12); save(); } render(); }
