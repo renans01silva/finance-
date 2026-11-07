@@ -9,7 +9,16 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v6 (inclui a v5)
+## [Não publicado] — versão v7 (inclui v5 e v6)
+
+### Corrigido
+- **Quadro do Orçamento com espaço vazio no topo** (tela Início): o título do quadro herdava o espaço que o app reserva para a área do relógio do iPhone (que só deve existir no topo da tela). No navegador de teste esse espaço é zero, por isso não aparecia nas conferências; agora a conferência simula o iPhone.
+
+### Alterado
+- **Quadro do Orçamento mais compacto** (≈30% mais baixo): "gasto no período" e "fora do orçamento" com letras um pouco menores e mais juntos; a "sobra no plano" continua em destaque. Nenhum número mudou.
+- Etiqueta de versão `?v=7`.
+
+### Também nesta versão (preparados como v6)
 
 ### Adicionado
 - **"Fora do orçamento" no quadro do Orçamento** (tela Início): embaixo do "gasto no período" de cada recebimento, aparece o total de gastos ligados àquele recebimento que não se encaixam em nenhum item do plano — em amarelo quando há algum, em cinza quando é zero. É o mesmo número da linha "Gastos fora do orçamento" da aba Orçamento (que, ao tocar, mostra a lista). Conta também contas fora do plano ainda não pagas.

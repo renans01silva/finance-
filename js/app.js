@@ -349,7 +349,7 @@ function orcTile() {
   const pd = E.cfg(S).payDays, a = E.planPeriod(S, E.pk(month, 1), ctx()), b = E.planPeriod(S, E.pk(month, 2), ctx());
   // embaixo da sobra: quanto do dinheiro deste recebimento já foi gasto (o mesmo "Já pago" da aba Orçamento)
   // e quanto ficou fora do orçamento (o mesmo "Gastos fora do orçamento" da aba Orçamento; amarelo se houver)
-  const cell = (d, P) => `<div><small>Dia ${d}</small><b class="${P.balanceCents < 0 ? 'neg' : 'pos'}">${brl(P.balanceCents)}</b><small>${P.balanceCents < 0 ? 'falta no plano' : 'sobra no plano'}</small><b class="spent">${brl(P.paidTotal)}</b><small>gasto no período</small><b class="off ${P.offCents ? 'warn' : 'mut'}">${brl(P.offCents)}</b><small>fora do orçamento</small></div>`;
+  const cell = (d, P) => `<div><small>Dia ${d}</small><b class="${P.balanceCents < 0 ? 'neg' : 'pos'}">${brl(P.balanceCents)}</b><small>${P.balanceCents < 0 ? 'falta no plano' : 'sobra no plano'}</small><span class="ln first"><b>${brl(P.paidTotal)}</b><small>gasto no período</small></span><span class="ln ${P.offCents ? 'warn' : 'mut'}"><b>${brl(P.offCents)}</b><small>fora do orçamento</small></span></div>`;
   return `<button class="glass orcq col" onclick="go('orc')"><span class="top"><span class="sq">${ic('wallet')}</span><b>Orçamento de ${MONTHS[+month.slice(5) - 1].toLowerCase()}</b>${ic('chevR', 'chev')}</span><span class="two3">${cell(pd[0], a)}${cell(pd[1], b)}</span></button>`;
 }
 function vInicio() {
