@@ -9,13 +9,15 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v5
+## [Não publicado] — versão v6 (inclui a v5)
 
 ### Adicionado
-- **"Gasto no período" no quadro do Orçamento** (tela Início): embaixo da "sobra no plano" de cada recebimento (Dia 10 e Dia 25), aparece quanto do dinheiro daquele recebimento já foi gasto. É o mesmo número da linha "Já pago" da aba Orçamento (contas do plano e faturas já pagas com aquele recebimento). Gastos fora do plano não entram nesse número — eles aparecem na aba Movimentos.
+- **"Fora do orçamento" no quadro do Orçamento** (tela Início): embaixo do "gasto no período" de cada recebimento, aparece o total de gastos ligados àquele recebimento que não se encaixam em nenhum item do plano — em amarelo quando há algum, em cinza quando é zero. É o mesmo número da linha "Gastos fora do orçamento" da aba Orçamento (que, ao tocar, mostra a lista). Conta também contas fora do plano ainda não pagas.
+- Etiqueta de versão `?v=6`.
 
-### Corrigido
-- **Topo da tela sobreposto ao saldo ao rolar**: o topo ("Olá, Renan" e o seletor de visão) era transparente, e o saldo grande aparecia por trás. Agora ele tem fundo escuro meio transparente, como a barra de menu de baixo.
+### Também nesta versão (preparados como v5)
+- **"Gasto no período" no quadro do Orçamento** (tela Início): embaixo da "sobra no plano" de cada recebimento (Dia 10 e Dia 25), aparece quanto do dinheiro daquele recebimento já foi gasto. É o mesmo número da linha "Já pago" da aba Orçamento (contas do plano e faturas já pagas com aquele recebimento). Gastos fora do plano não entram nesse número — eles aparecem na linha "fora do orçamento", logo abaixo.
+- **Corrigido — topo da tela sobreposto ao saldo ao rolar**: o topo ("Olá, Renan" e o seletor de visão) era transparente, e o saldo grande aparecia por trás. Agora ele tem fundo escuro meio transparente, como a barra de menu de baixo.
 - Etiqueta de versão `?v=5`.
 
 ---
