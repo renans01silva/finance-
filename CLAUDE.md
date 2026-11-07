@@ -88,7 +88,7 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 1. **`css/estilo.css`** — todo o CSS. Cores sempre por variáveis CSS (`var(--pri)` etc.).
 2. **`js/temas.js`** — exporta `window.FCT`. Paletas (`azul`, `verde`, `roxo`, `grafite`, `marinho`, `claro`) × modos (`auto`, `light`, `dark`). Também calcula contraste (WCAG).
 3. **`js/motor.js`** — exporta `window.FC` (usado como `E` no app). Só lógica, sem tela: funções `E.addIncome`, `E.addExpense`, `E.invoiceFor`, `E.invoices`, `E.payInvoice`, `E.accountBalance`, `E.monthSummary`, `E.plan*`, `E.migrate`, `E.couple*` etc. Também roda no Node (`module.exports`) — é assim que os testes o carregam.
-4. **`js/app.js`** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov` (aba "Movimentos": só gastos realizados, via `E.spentList`), `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
+4. **`js/app.js`** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio` (quadro "Seu orçamento agora": período de recebimento atual + o próximo, via `E.periodOf`/`E.nextPk`; gasto = `E.spentBetween`), `vMov` (aba "Movimentos": só gastos realizados, via `E.spentList`), `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
 - **Etiqueta de versão:** o `index.html` carrega os arquivos com `?v=N` (ex.: `js/app.js?v=2`). **Ao publicar uma mudança em CSS/JS, aumentar o N** em todas as linhas, para o celular não usar uma cópia antiga guardada na memória.
 
 ### B5. Regras de negócio que NUNCA podem ser quebradas
@@ -111,11 +111,12 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- **Testes automáticos do motor financeiro** (37 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
+- **Testes automáticos do motor financeiro** (41 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
   - `tests/carregar-motor.js` carrega o `js/motor.js` isolado, sem navegador.
   - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
   - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.
 - Para conferir as telas: abrir `index.html` em um navegador (o Chromium com Playwright está disponível no ambiente do Claude Code). Sem acesso ao Supabase no ambiente, o teste de nuvem é feito pelo Renan no celular **depois** de publicar.
+- **Simular o iPhone** nas conferências de tela: o navegador de teste não tem o "entalhe" (área do relógio). Injetar `.top{padding-top:calc(14px + 47px)}` antes da foto — foi assim que se achou o espaço vazio no quadro do Orçamento.
 - Antes de enviar mudanças no código, verificar no navegador que o app abre sem erros no console. Em mudanças de organização (sem mudar comportamento), comparar as telas da versão antiga e da nova com os mesmos dados — foi assim na Fase 2.
 - Separar também o backup completo do projeto (`git archive --format=zip HEAD`) para o Renan guardar no iCloud.
 

@@ -9,7 +9,17 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v7 (inclui v5 e v6)
+## [Não publicado] — versão v8 (inclui v5, v6 e v7)
+
+### Corrigido
+- **Gastos de hoje não apareciam no quadro do Orçamento.** Dois motivos: (1) o quadro mostrava os períodos do mês do calendário — em 07/11, os períodos de novembro (10/11 e 25/11) ainda não tinham começado, e os gastos de hoje pertencem ao período do dia 25 de outubro (25/10 a 09/11); (2) o "gasto no período" usava só o "Já pago" do plano, que deixava de fora compras no cartão (até pagar a fatura) e gastos fora do plano.
+
+### Alterado
+- O quadro virou **"Seu orçamento agora"**: mostra o período de recebimento que está acontecendo (**agora**) e o seguinte (**próximo**), com as datas de cada um. Avança sozinho no dia do recebimento. Vale para os dias de cada pessoa (Renan 10/25, Duda 15/30).
+- **"Gasto no período" soma tudo** o que foi gasto entre o início e o fim do período: compras no cartão (data da compra), contas pagas e gastos fora do plano — a mesma regra da aba Movimentos. "Fora do orçamento" continua mostrando a parte que não está no plano.
+- 4 testes novos (total: 41). Etiqueta de versão `?v=8`.
+
+### Também nesta versão (preparados como v7)
 
 ### Corrigido
 - **Quadro do Orçamento com espaço vazio no topo** (tela Início): o título do quadro herdava o espaço que o app reserva para a área do relógio do iPhone (que só deve existir no topo da tela). No navegador de teste esse espaço é zero, por isso não aparecia nas conferências; agora a conferência simula o iPhone.

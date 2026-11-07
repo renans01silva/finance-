@@ -298,6 +298,8 @@
   // contas pagas pela data do pagamento, estornos descontam. Contas a pagar, entradas, transferências e pagamentos de fatura não entram.
   E.spentList = (s, month, ctx = 'all') => live(s, ctx).filter((t) => spentDate(t) && E.ym(spentDate(t)) === month)
     .map((t) => ({ t, date: spentDate(t), cents: spentVal(t) })).sort((a, b) => b.date.localeCompare(a.date));
+  // gasto realizado entre duas datas (mesma regra do "Gasto"): compras no cartão pela data da compra, contas pagas pela data do pagamento
+  E.spentBetween = (s, start, end, ctx = 'all') => live(s, ctx).filter((t) => { const d = spentDate(t); return d && d >= start && d <= end; }).reduce((a, t) => a + spentVal(t), 0);
   E.monthSeries = (s, endMonth, n, ctx = 'all') => Array.from({ length: n }, (_, i) => {
     const mo = E.addMonths(endMonth + '-01', i - n + 1).slice(0, 7);
     const L = live(s, ctx);
@@ -390,6 +392,9 @@
     return { start, end: E.addDays(next, -1) };
   };
   // em qual período entra uma receita: escolha do usuário (slot) ou o dia de recebimento mais próximo da data
+  // período de recebimento em que uma data cai (ex.: 07/11 com dias 10 e 25 → período do dia 25 de outubro) e o período seguinte
+  E.periodOf = (s, date) => { const ym = date.slice(0, 7), prev = E.addMonths(ym + '-01', -1).slice(0, 7); for (const pk of [E.pk(ym, 2), E.pk(ym, 1), E.pk(prev, 2)]) { const r = E.periodRange(s, pk); if (date >= r.start && date <= r.end) return pk; } return E.pk(prev, 2); };
+  E.nextPk = (pk) => { const q = E.parsePk(pk); return q.slot === 1 ? E.pk(q.ym, 2) : E.pk(E.addMonths(q.ym + '-01', 1).slice(0, 7), 1); };
   E.slotOfDate = (s, date) => { const [a, b] = E.cfg(s).payDays, d = +date.slice(8, 10); return Math.abs(d - a) <= Math.abs(d - b) ? 1 : 2; };
   E.slotOf = (s, t) => (t.slot === 1 || t.slot === 2) ? t.slot : E.slotOfDate(s, t.dueDate || t.purchaseDate);
   E.nextPayday = (s, today = E.today()) => {

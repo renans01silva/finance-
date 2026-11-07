@@ -321,3 +321,39 @@ describe('10. Dias de recebimento até 31', () => {
     assert.equal(E.paydayDate(s, E.pk('2027-02', 2)), '2027-02-25');
   });
 });
+
+describe('11. Quadro "Seu orçamento agora" (período atual e próximo)', () => {
+  test('em 07/11, com dias 10 e 25, o período atual é o do dia 25 de outubro', () => {
+    const { E, s } = cenario();
+    assert.equal(E.periodOf(s, '2026-11-07'), '2026-10|2');
+    assert.equal(E.nextPk('2026-10|2'), '2026-11|1');
+  });
+
+  test('o período avança no dia do recebimento e vira o ano', () => {
+    const { E, s } = cenario();
+    assert.equal(E.periodOf(s, '2026-11-10'), '2026-11|1');
+    assert.equal(E.periodOf(s, '2026-11-24'), '2026-11|1');
+    assert.equal(E.periodOf(s, '2026-11-25'), '2026-11|2');
+    assert.equal(E.periodOf(s, '2026-12-09'), '2026-11|2');
+    assert.equal(E.nextPk('2026-12|2'), '2027-01|1');
+  });
+
+  test('com dias 15 e 30 (Duda), inclusive em fevereiro', () => {
+    const { E, s } = cenario();
+    E.setPayDays(s, 15, 30);
+    assert.equal(E.periodOf(s, '2026-11-14'), '2026-10|2');
+    assert.equal(E.periodOf(s, '2027-02-27'), '2027-02|1');
+    assert.equal(E.periodOf(s, '2027-02-28'), '2027-02|2'); // dia 30 cai em 28/02
+    assert.equal(E.periodOf(s, '2027-03-01'), '2027-02|2');
+  });
+
+  test('gasto no período soma tudo entre as datas: cartão, contas pagas e fora do plano', () => {
+    const { E, s, conta, cartao } = cenario();
+    E.addExpense(s, { amountCents: 21890, cardId: cartao.id, desc: 'Mercado', date: '2026-11-07' });
+    E.addExpense(s, { amountCents: 6500, accountId: conta.id, desc: 'Almoço', paid: true, paidDate: '2026-11-07' });
+    E.addExpense(s, { amountCents: 99900, accountId: conta.id, desc: 'Aluguel', dueDate: '2026-11-08' }); // a pagar: não conta
+    E.addExpense(s, { amountCents: 1000, accountId: conta.id, desc: 'Fora das datas', paid: true, paidDate: '2026-11-10' });
+    const r = E.periodRange(s, E.periodOf(s, '2026-11-07'));
+    assert.equal(E.spentBetween(s, r.start, r.end), 28390);
+  });
+});

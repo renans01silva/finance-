@@ -346,11 +346,13 @@ const periodTiles = (pk) => {
 };
 function orcTile() {
   if (!E.planItems(S).length) return `<button class="glass orcq" onclick="go('orc')"><span class="sq">${ic('wallet')}</span><span class="t"><b>Monte seu orçamento</b><small>Decida quanto cada recebimento vai pagar</small></span>${ic('chevR', 'chev')}</button>`;
-  const pd = E.cfg(S).payDays, a = E.planPeriod(S, E.pk(month, 1), ctx()), b = E.planPeriod(S, E.pk(month, 2), ctx());
-  // embaixo da sobra: quanto do dinheiro deste recebimento já foi gasto (o mesmo "Já pago" da aba Orçamento)
-  // e quanto ficou fora do orçamento (o mesmo "Gastos fora do orçamento" da aba Orçamento; amarelo se houver)
-  const cell = (d, P) => `<div><small>Dia ${d}</small><b class="${P.balanceCents < 0 ? 'neg' : 'pos'}">${brl(P.balanceCents)}</b><small>${P.balanceCents < 0 ? 'falta no plano' : 'sobra no plano'}</small><span class="ln first"><b>${brl(P.paidTotal)}</b><small>gasto no período</small></span><span class="ln ${P.offCents ? 'warn' : 'mut'}"><b>${brl(P.offCents)}</b><small>fora do orçamento</small></span></div>`;
-  return `<button class="glass orcq col" onclick="go('orc')"><span class="top"><span class="sq">${ic('wallet')}</span><b>Orçamento de ${MONTHS[+month.slice(5) - 1].toLowerCase()}</b>${ic('chevR', 'chev')}</span><span class="two3">${cell(pd[0], a)}${cell(pd[1], b)}</span></button>`;
+  // mostra o período que você está vivendo agora e o próximo (não o mês do calendário): assim os gastos de hoje aparecem na hora
+  const pd = E.cfg(S).payDays, cur = E.periodOf(S, E.today()), nxt = E.nextPk(cur);
+  const a = E.planPeriod(S, cur, ctx()), b = E.planPeriod(S, nxt, ctx()), dm = (d) => d.slice(8) + '/' + d.slice(5, 7);
+  // gasto no período = TUDO o que foi gasto entre o início e o fim do período (plano + fora do plano + cartão)
+  const cell = (pk, P, tag) => { const d = pd[E.parsePk(pk).slot - 1], g = E.spentBetween(S, P.range.start, P.range.end, ctx());
+    return `<div><small>Dia ${d} · <span class="tag">${tag}</span></small><small class="rg">${dm(P.range.start)} a ${dm(P.range.end)}</small><b class="${P.balanceCents < 0 ? 'neg' : 'pos'}">${brl(P.balanceCents)}</b><small>${P.balanceCents < 0 ? 'falta no plano' : 'sobra no plano'}</small><span class="ln first"><b>${brl(g)}</b><small>gasto no período</small></span><span class="ln ${P.offCents ? 'warn' : 'mut'}"><b>${brl(P.offCents)}</b><small>fora do orçamento</small></span></div>`; };
+  return `<button class="glass orcq col" onclick="go('orc')"><span class="top"><span class="sq">${ic('wallet')}</span><b>Seu orçamento agora</b>${ic('chevR', 'chev')}</span><span class="two3">${cell(cur, a, 'agora')}${cell(nxt, b, 'próximo')}</span></button>`;
 }
 function vInicio() {
   const today = E.today(), m = E.monthSummary(S, month, ctx(), today), ups = E.upcoming(S, 7, ctx(), today), ins = E.insights(S, ctx(), today);
