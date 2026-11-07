@@ -9,7 +9,18 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v4
+## [Não publicado] — versão v5
+
+### Adicionado
+- **"Gasto no período" no quadro do Orçamento** (tela Início): embaixo da "sobra no plano" de cada recebimento (Dia 10 e Dia 25), aparece quanto do dinheiro daquele recebimento já foi gasto. É o mesmo número da linha "Já pago" da aba Orçamento (contas do plano e faturas já pagas com aquele recebimento). Gastos fora do plano não entram nesse número — eles aparecem na aba Movimentos.
+
+### Corrigido
+- **Topo da tela sobreposto ao saldo ao rolar**: o topo ("Olá, Renan" e o seletor de visão) era transparente, e o saldo grande aparecia por trás. Agora ele tem fundo escuro meio transparente, como a barra de menu de baixo.
+- Etiqueta de versão `?v=5`.
+
+---
+
+## [07/11/2026] — versão v4 no ar
 
 ### Alterado
 - **Aba Movimentos agora mostra só os gastos realizados** (compras no cartão e contas já pagas), com o **total do mês no topo** — o mesmo número do "Gasto" da tela Início. Compras no cartão mostram o cartão e a data da compra (antes mostravam a data da fatura, o que confundia).
