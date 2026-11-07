@@ -9,6 +9,19 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
+## [Não publicado] — versão v4
+
+### Alterado
+- **Aba Movimentos agora mostra só os gastos realizados** (compras no cartão e contas já pagas), com o **total do mês no topo** — o mesmo número do "Gasto" da tela Início. Compras no cartão mostram o cartão e a data da compra (antes mostravam a data da fatura, o que confundia).
+  Saíram dessa lista: contas a pagar (estão na aba Contas), entradas (em Menu → Recebimentos) e transferências entre contas (não são gasto).
+- **Dias de recebimento podem ir até 31** (antes: até 28). Em mês mais curto, o recebimento cai no último dia (ex.: dia 30 em fevereiro → 28, ou 29 em ano bissexto). Motivo: a Duda recebe nos dias 15 e 30. Cada pessoa ajusta os seus em Menu → Configurações → Dias de recebimento; os do Renan continuam 10 e 25.
+- Etiqueta de versão `?v=4`.
+
+### Adicionado
+- 8 testes novos (total: 37): lista de gastos (o que entra e o que fica de fora; total igual ao da tela Início) e dias 30/31 em meses curtos.
+
+---
+
 ## [06/11/2026] — Conta da esposa (sem mudança no app)
 
 ### Adicionado

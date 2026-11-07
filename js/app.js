@@ -483,7 +483,7 @@ function vRec() {
   ${periodCard(pk1)}${periodCard(pk2)}
   <details class="how"><summary>Como funciona?</summary>Você escolhe com qual recebimento cada conta será paga (a sugestão é o recebimento mais recente antes do vencimento, mas nada é vinculado sem você aceitar). “Projetado” = previsto − contas vinculadas. “Disponível” = só o que já entrou − o que já foi pago. Os dias de recebimento podem ser trocados quando quiser.</details>`;
 }
-window.openPayDays = () => { const pd = E.cfg(S).payDays; sheet(`<h2>Dias de recebimento</h2><p class="lead">Informe os dias do mês em que seu dinheiro costuma entrar. Seus lançamentos e vínculos continuam valendo.</p>${F('Primeiro recebimento', `<input id="pd1" type="number" min="1" max="28" inputmode="numeric" value="${pd[0]}">`)}${F('Segundo recebimento', `<input id="pd2" type="number" min="1" max="28" inputmode="numeric" value="${pd[1]}">`, 'O segundo precisa ser depois do primeiro (dias de 1 a 28).')}<div style="height:22px"></div><button class="btn" onclick="savePayDays()">Salvar</button>`); };
+window.openPayDays = () => { const pd = E.cfg(S).payDays; sheet(`<h2>Dias de recebimento</h2><p class="lead">Informe os dias do mês em que seu dinheiro costuma entrar. Seus lançamentos e vínculos continuam valendo.</p>${F('Primeiro recebimento', `<input id="pd1" type="number" min="1" max="31" inputmode="numeric" value="${pd[0]}">`)}${F('Segundo recebimento', `<input id="pd2" type="number" min="1" max="31" inputmode="numeric" value="${pd[1]}">`, 'O segundo precisa ser depois do primeiro (dias de 1 a 31). Em meses mais curtos, como fevereiro, usamos o último dia do mês.')}<div style="height:22px"></div><button class="btn" onclick="savePayDays()">Salvar</button>`); };
 window.savePayDays = () => { try { E.setPayDays(S, val('pd1'), val('pd2')); save(); closeSheet(); toast('Dias atualizados'); render(); } catch (e) { toast(e.message); } };
 // escolher o recebimento de uma conta/fatura
 window.openLink = (kind, a, b, back) => {
@@ -504,8 +504,14 @@ window.openLinker = (ym) => {
 window.acceptAll = (ym) => ask(`Vincular as ${window._lk.length} contas aos recebimentos sugeridos? Você pode mudar cada uma depois.`, () => { const n = E.acceptSuggestions(S, window._lk); save(); closeSheet(); toast(n + ' contas vinculadas'); render(); }, 'Vincular todas');
 
 function vMov() {
-  const L = listCtx().filter((t) => E.ym(t.purchaseDate) === month || (t.paidDate && E.ym(t.paidDate) === month)).sort((a, b) => (b.paidDate || b.dueDate || b.purchaseDate).localeCompare(a.paidDate || a.dueDate || a.purchaseDate));
-  return `${topbar()}${pageH('Movimentações', 'Tudo que entrou, saiu ou foi transferido.')}${monthPicker()}<div class="card">${L.length ? L.map(txRow).join('') : empty('list', 'Nada neste mês', 'Use o botão + para registrar.')}</div>`;
+  const L = E.spentList(S, month, ctx()), total = L.reduce((a, x) => a + x.cents, 0), mes = MONTHS[+month.slice(5) - 1].toLowerCase();
+  const row = ({ t, date }) => {
+    const rf = t.kind === 'refund', card = t.cardId && S.cards.find((c) => c.id === t.cardId);
+    const how = rf ? 'Estorno' : card ? 'Cartão ' + esc(card.name) : 'Pago';
+    return `<div class="row" onclick="openTx('${t.id}')"><div class="sq">${rf ? ic('undo') : catIcon(t.categoryId)}</div><div class="m"><b>${esc(t.desc)}</b><small>${esc(catName(t.categoryId))} · ${how} · ${fd(date).slice(0, 5)}</small></div><div class="a ${rf ? 'pos' : ''}">${rf ? '+' : '−'}${brl(t.amountCents)}</div></div>`;
+  };
+  const head = `<div class="glass sobrar" style="margin-bottom:12px"><div><div class="t">Gasto em ${mes}</div><div class="v">${partMoney(total)}</div><small>${L.length} ${L.length === 1 ? 'gasto' : 'gastos'} · compras no cartão e contas já pagas</small></div></div>`;
+  return `${topbar()}${pageH('Gastos do mês', 'Só o que já foi gasto. Contas a pagar ficam na aba Contas; entradas, em Recebimentos.')}${monthPicker()}${head}<div class="card">${L.length ? L.map(row).join('') : empty('list', 'Nenhum gasto neste mês', 'Quando você pagar uma conta ou comprar no cartão, aparece aqui.')}</div>`;
 }
 
 let showAllBills = false;

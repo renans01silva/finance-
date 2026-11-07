@@ -88,7 +88,7 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 1. **`css/estilo.css`** — todo o CSS. Cores sempre por variáveis CSS (`var(--pri)` etc.).
 2. **`js/temas.js`** — exporta `window.FCT`. Paletas (`azul`, `verde`, `roxo`, `grafite`, `marinho`, `claro`) × modos (`auto`, `light`, `dark`). Também calcula contraste (WCAG).
 3. **`js/motor.js`** — exporta `window.FC` (usado como `E` no app). Só lógica, sem tela: funções `E.addIncome`, `E.addExpense`, `E.invoiceFor`, `E.invoices`, `E.payInvoice`, `E.accountBalance`, `E.monthSummary`, `E.plan*`, `E.migrate`, `E.couple*` etc. Também roda no Node (`module.exports`) — é assim que os testes o carregam.
-4. **`js/app.js`** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov`, `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
+4. **`js/app.js`** — estado `S`, salvar/sincronizar, login, navegação e as telas `vInicio`, `vMov` (aba "Movimentos": só gastos realizados, via `E.spentList`), `vContas`, `vCartoes`, `vOrc`, `vRec`, `vPlan`, `vRel`, `vBancos`, `vCasal`. A função `render()` escolhe a tela pela variável `tab`. Formulários abrem em "sheets" (`sheet(html)`).
 - **Etiqueta de versão:** o `index.html` carrega os arquivos com `?v=N` (ex.: `js/app.js?v=2`). **Ao publicar uma mudança em CSS/JS, aumentar o N** em todas as linhas, para o celular não usar uma cópia antiga guardada na memória.
 
 ### B5. Regras de negócio que NUNCA podem ser quebradas
@@ -96,7 +96,7 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - **Nunca apagar lançamento**: usar `E.cancel` (status `cancelled`). Toda mudança registra `history`.
 - Lançamento só vira "pago" por `E.confirm`. Compra no cartão é paga **pela fatura** (`E.payInvoice`), e pagar fatura **não** é nova despesa.
 - Datas são texto `AAAA-MM-DD`. Usar as funções `E.addMonths`, `E.addDays` etc.
-- Dias de fechamento/vencimento de cartão e dias de recebimento: entre 1 e 28.
+- Dias de fechamento/vencimento de cartão: entre 1 e 28. Dias de recebimento: entre 1 e 31 — em mês mais curto, cai no último dia (`E.paydayDate`). Cada usuário tem os seus (Renan: 10 e 25; Duda: 15 e 30).
 - Cores: só pelos tokens de tema — nada de cor fixa espalhada.
 - Texto vindo do usuário exibido na tela sempre passa por `esc()` (evita injeção de código).
 - Textos da interface em português, tom simples e amigável.
@@ -111,7 +111,7 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- **Testes automáticos do motor financeiro** (29 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
+- **Testes automáticos do motor financeiro** (37 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
   - `tests/carregar-motor.js` carrega o `js/motor.js` isolado, sem navegador.
   - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
   - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.

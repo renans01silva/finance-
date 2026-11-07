@@ -7,7 +7,7 @@ Funciona no navegador e pode ser **instalado na tela inicial** (PWA).
 
 ## O que o app faz
 - **Início:** saldo disponível, quanto vai sobrar no mês e alertas.
-- **Movimentos:** receitas, despesas e transferências, com busca e filtros.
+- **Movimentos:** os gastos já realizados no mês (compras no cartão e contas pagas), com o total.
 - **Contas a pagar:** vencimentos, contas recorrentes e confirmação de pagamento.
 - **Cartões:** faturas, limite, compras parceladas, estornos e pagamento de fatura.
 - **Orçamento e Planejamento:** quanto pode gastar por categoria e por período de recebimento (dias 10 e 25, configuráveis).
@@ -38,7 +38,7 @@ Os dados ficam no aparelho e são sincronizados com o Supabase, com login por e-
 - [`docs/GLOSSARIO.md`](docs/GLOSSARIO.md): termos técnicos explicados.
 
 ## Testes automáticos
-29 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração).
+37 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração, lista de gastos e dias de recebimento).
 Para rodar, na pasta do projeto: `node --test tests/motor.test.js`
 
 ## Publicação

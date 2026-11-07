@@ -252,3 +252,72 @@ describe('8. Duplicidade', () => {
     assert.equal(E.findDuplicate(s, { kind: 'expense', amountCents: 4591, desc: 'Padaria', date: '2026-11-06' }), undefined);
   });
 });
+
+describe('9. Lista de gastos realizados (aba Movimentos)', () => {
+  test('entram só compras no cartão e contas pagas; o resto fica de fora', () => {
+    const { E, s, conta, cartao } = cenario();
+    const poup = E.addAccount(s, { name: 'Poupança' });
+    E.addExpense(s, { amountCents: 10000, cardId: cartao.id, desc: 'Mercado', date: '2026-11-06' });
+    E.addExpense(s, { amountCents: 5000, accountId: conta.id, desc: 'Luz', paid: true, paidDate: '2026-11-03', date: '2026-11-03' });
+    E.addExpense(s, { amountCents: 90000, accountId: conta.id, desc: 'Aluguel', dueDate: '2026-11-10' }); // a pagar: fica de fora
+    E.addIncome(s, { amountCents: 300000, accountId: conta.id, desc: 'Salário', received: true });       // entrada: fica de fora
+    E.addTransfer(s, { amountCents: 20000, fromId: conta.id, toId: poup.id });                           // transferência: fica de fora
+    const [cancelada] = E.addExpense(s, { amountCents: 777, accountId: conta.id, desc: 'Errado', paid: true });
+    E.cancel(s, cancelada.id);                                                                          // cancelada: fica de fora
+    const lista = E.spentList(s, '2026-11');
+    igual(lista.map((x) => x.t.desc), ['Mercado', 'Luz']); // mais recente primeiro
+    assert.equal(lista.reduce((a, x) => a + x.cents, 0), 15000);
+  });
+
+  test('o total da lista é igual ao "Gasto" da tela Início', () => {
+    const { E, s, conta, cartao } = cenario();
+    E.addExpense(s, { amountCents: 30000, cardId: cartao.id, installments: 3, desc: 'Fone', date: '2026-11-02' });
+    E.addExpense(s, { amountCents: 4590, accountId: conta.id, desc: 'Padaria', paid: true, paidDate: '2026-11-05' });
+    const total = E.spentList(s, '2026-11').reduce((a, x) => a + x.cents, 0);
+    assert.equal(total, E.monthSummary(s, '2026-11').spentCents);
+    assert.equal(total, 14590); // só a 1ª parcela do fone (R$ 100) entra em novembro
+  });
+
+  test('pagar a fatura não aparece como gasto (a compra já apareceu)', () => {
+    const { E, s, conta, cartao } = cenario();
+    E.addExpense(s, { amountCents: 20000, cardId: cartao.id, desc: 'Roupa', date: '2026-11-06' });
+    E.payInvoice(s, { cardId: cartao.id, dueDate: '2026-12-12', accountId: conta.id, amountCents: 20000, date: '2026-11-07' });
+    igual(E.spentList(s, '2026-11').map((x) => x.t.desc), ['Roupa']);
+  });
+});
+
+describe('10. Dias de recebimento até 31', () => {
+  test('aceita 15 e 30 (dias da Duda)', () => {
+    const { E, s } = cenario();
+    E.setPayDays(s, 15, 30);
+    igual(E.cfg(s).payDays, [15, 30]);
+    assert.equal(E.paydayDate(s, E.pk('2026-11', 2)), '2026-11-30');
+  });
+
+  test('dia 30 em fevereiro cai no último dia do mês', () => {
+    const { E, s } = cenario();
+    E.setPayDays(s, 15, 30);
+    assert.equal(E.paydayDate(s, E.pk('2027-02', 2)), '2027-02-28');
+    assert.equal(E.paydayDate(s, E.pk('2028-02', 2)), '2028-02-29'); // ano bissexto
+  });
+
+  test('dia 31 em mês de 30 dias cai no dia 30, e o período seguinte começa certo', () => {
+    const { E, s } = cenario();
+    E.setPayDays(s, 15, 31);
+    assert.equal(E.paydayDate(s, E.pk('2026-11', 2)), '2026-11-30');
+    igual(E.periodRange(s, E.pk('2026-11', 2)), { start: '2026-11-30', end: '2026-12-14' });
+  });
+
+  test('continua recusando dia fora de 1 a 31 ou fora de ordem', () => {
+    const { E, s } = cenario();
+    assert.throws(() => E.setPayDays(s, 15, 32));
+    assert.throws(() => E.setPayDays(s, 0, 10));
+    assert.throws(() => E.setPayDays(s, 30, 15));
+  });
+
+  test('quem já usa 10 e 25 não muda nada', () => {
+    const { E, s } = cenario();
+    igual(E.cfg(s).payDays, [10, 25]);
+    assert.equal(E.paydayDate(s, E.pk('2027-02', 2)), '2027-02-25');
+  });
+});

@@ -294,6 +294,10 @@
     live(s, ctx).filter((t) => spentDate(t) && E.ym(spentDate(t)) === month).forEach((t) => { const k = t.categoryId || 'sem'; m[k] = (m[k] || 0) + spentVal(t); });
     return m;
   };
+  // gastos realizados no mês (a mesma regra do "Gasto" da tela Início): compras no cartão pela data da compra,
+  // contas pagas pela data do pagamento, estornos descontam. Contas a pagar, entradas, transferências e pagamentos de fatura não entram.
+  E.spentList = (s, month, ctx = 'all') => live(s, ctx).filter((t) => spentDate(t) && E.ym(spentDate(t)) === month)
+    .map((t) => ({ t, date: spentDate(t), cents: spentVal(t) })).sort((a, b) => b.date.localeCompare(a.date));
   E.monthSeries = (s, endMonth, n, ctx = 'all') => Array.from({ length: n }, (_, i) => {
     const mo = E.addMonths(endMonth + '-01', i - n + 1).slice(0, 7);
     const L = live(s, ctx);
@@ -369,15 +373,16 @@
   // ───── 1) Recebimentos por período (dias configuráveis, padrão 10 e 25)
   const DEFAULT_PAYDAYS = [10, 25];
   const MS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-  E.cfg = (s) => { const p = (s.settings || {}).payDays; return { payDays: Array.isArray(p) && p.length === 2 && p[0] >= 1 && p[1] <= 28 && p[0] < p[1] ? p.slice() : DEFAULT_PAYDAYS.slice() }; };
+  E.cfg = (s) => { const p = (s.settings || {}).payDays; return { payDays: Array.isArray(p) && p.length === 2 && p[0] >= 1 && p[1] <= 31 && p[0] < p[1] ? p.slice() : DEFAULT_PAYDAYS.slice() }; };
   E.setPayDays = (s, a, b) => {
     a = +a; b = +b;
-    if (!(Number.isInteger(a) && Number.isInteger(b) && a >= 1 && b <= 28 && a < b)) throw new Error('Informe dois dias entre 1 e 28, sendo o primeiro menor que o segundo.');
+    if (!(Number.isInteger(a) && Number.isInteger(b) && a >= 1 && b <= 31 && a < b)) throw new Error('Informe dois dias entre 1 e 31, sendo o primeiro menor que o segundo.');
     s.settings = s.settings || {}; s.settings.payDays = [a, b];
   };
   E.pk = (ym, slot) => ym + '|' + slot;
   E.parsePk = (pk) => ({ ym: pk.slice(0, 7), slot: +pk.slice(8) });
-  E.paydayDate = (s, pk) => { const q = E.parsePk(pk); return q.ym + '-' + pad(E.cfg(s).payDays[q.slot - 1]); };
+  // dia 29, 30 ou 31 em mês mais curto (ex.: fevereiro) cai no último dia do mês
+  E.paydayDate = (s, pk) => { const q = E.parsePk(pk), d = E.cfg(s).payDays[q.slot - 1]; return q.ym + '-' + pad(Math.min(d, E.daysInMonth(+q.ym.slice(0, 4), +q.ym.slice(5, 7)))); };
   E.fundLabel = (s, pk) => { const q = E.parsePk(pk); return 'Dia ' + E.cfg(s).payDays[q.slot - 1] + ' · ' + MS[+q.ym.slice(5) - 1] + '/' + q.ym.slice(0, 4); };
   E.periodRange = (s, pk) => {
     const q = E.parsePk(pk), start = E.paydayDate(s, pk);
