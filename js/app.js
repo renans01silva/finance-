@@ -148,7 +148,7 @@ window.openDrawer = () => {
 window.closeDrawer = () => { const d = $('#drawer'); if (d) d.remove(); };
 
 // ───── sheets
-function sheet(html) { closeSheet(); const bg = document.createElement('div'); bg.className = 'back'; bg.id = 'sheetbg'; bg.innerHTML = `<div class="sheet">${html}</div>`; bg.addEventListener('click', (e) => { if (e.target === bg) closeSheet(); }); document.body.appendChild(bg); }
+function sheet(html) { closeSheet(); const bg = document.createElement('div'); bg.className = 'back'; bg.id = 'sheetbg'; bg.innerHTML = `<div class="sheet"><button class="sheet-x" onclick="closeSheet()" aria-label="Fechar">${ic('x')}</button>${html}</div>`; bg.addEventListener('click', (e) => { if (e.target === bg) closeSheet(); }); document.body.appendChild(bg); }
 window.closeSheet = () => { const b = $('#sheetbg'); if (b) b.remove(); };
 window.ask = (msg, fn, yes = 'Continuar') => { window._askfn = fn; sheet(`<h2>Confirmar</h2><p class="lead" style="font-size:15px;color:var(--tx)">${msg}</p><button class="btn" onclick="const f=window._askfn;closeSheet();f()">${yes}</button><div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Voltar</button>`); };
 const accOpts = (sel) => ctxAccounts().map((a) => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}</option>`).join('');

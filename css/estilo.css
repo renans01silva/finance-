@@ -85,6 +85,8 @@ nav button.on{color:var(--link)}
 @keyframes f{from{opacity:0}}@keyframes up{from{transform:translateY(40px);opacity:0}}@keyframes sl{from{transform:translateX(-100%)}}
 .sheet{background:var(--card);background-image:radial-gradient(100% 30% at 50% 0,var(--sheetglow),transparent);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:30px 30px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom));animation:up .25s;border:1px solid var(--line);border-bottom:0}
 .sheet:before{content:"";display:block;width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 16px}
+.sheet-x{position:sticky;top:0;float:right;z-index:3;width:40px;height:40px;margin:-8px -6px 0 8px;border:0;border-radius:50%;background:var(--seg);color:var(--tx);display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.sheet-x svg.i{width:20px;height:20px}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;text-align:left}
 .sheet h2{margin:0 0 4px;font-size:24px;font-weight:800;letter-spacing:-.5px}.sheet .lead{margin:0 0 16px}
 .field{margin-top:16px}.field>label{display:block;font-size:13px;font-weight:800;margin-bottom:7px;color:var(--mut)}
 .field .hint{font-size:12.5px;color:var(--mut);margin-top:6px;font-weight:500}

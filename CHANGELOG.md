@@ -9,7 +9,14 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v8 (inclui v5, v6 e v7)
+## [Não publicado] — versão v9 (inclui v5 a v8)
+
+### Corrigido
+- **Não dava para sair dos formulários** (Nova entrada, Despesa, Configurações etc.): eles só fechavam tocando na área escura de cima, e nos formulários compridos essa área ficava escondida atrás do relógio do iPhone. Agora **todos os formulários têm um botão "X"** no canto superior direito, que continua visível ao rolar. Tocar fora continua funcionando. O X fecha sem salvar.
+- **Campo de data passando da tela no iPhone** ("Quando?"): aplicada a correção conhecida para esse comportamento do iPhone (a confirmar no celular, porque o navegador de teste não reproduz).
+- Etiqueta de versão `?v=9`.
+
+### Também nesta versão (preparados como v8)
 
 ### Corrigido
 - **Gastos de hoje não apareciam no quadro do Orçamento.** Dois motivos: (1) o quadro mostrava os períodos do mês do calendário — em 07/11, os períodos de novembro (10/11 e 25/11) ainda não tinham começado, e os gastos de hoje pertencem ao período do dia 25 de outubro (25/10 a 09/11); (2) o "gasto no período" usava só o "Já pago" do plano, que deixava de fora compras no cartão (até pagar a fatura) e gastos fora do plano.
