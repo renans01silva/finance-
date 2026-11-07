@@ -9,7 +9,16 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v9 (inclui v5 a v8)
+## [Não publicado] — versão v10 (inclui v5 a v9)
+
+### Corrigido
+- **A planilha do Renan aparecia para outras contas.** O orçamento da planilha dele está gravado dentro do app (Aluguel, AABB Tênis, Jiu-jítsu…), e as opções "Usar o orçamento da minha planilha", "Contas da planilha" e o aviso de "atualizar orçamento" apareciam para qualquer pessoa — por isso a Duda ficou com o orçamento do Renan (planejado R$ 3.787,92 / R$ 2.673,46). Agora essas opções **só aparecem na conta do Renan**. O app reconhece a conta pela "impressão digital" (SHA-256) do e-mail, guardada em `config.js` — o e-mail em si não fica visível no site.
+
+### Adicionado
+- **"Recomeçar orçamento do zero"** (fim da aba Orçamento), com confirmação: tira os itens do orçamento, os rendimentos planejados e os limites por categoria deste mês em diante, e encerra as contas mensais criadas pelo orçamento (só as futuras ainda não pagas são canceladas). **Nenhum lançamento já feito é apagado.**
+- 2 testes novos (total: 43). Etiqueta de versão `?v=10`.
+
+### Também nesta versão (preparados como v9)
 
 ### Corrigido
 - **Não dava para sair dos formulários** (Nova entrada, Despesa, Configurações etc.): eles só fechavam tocando na área escura de cima, e nos formulários compridos essa área ficava escondida atrás do relógio do iPhone. Agora **todos os formulários têm um botão "X"** no canto superior direito, que continua visível ao rolar. Tocar fora continua funcionando. O X fecha sem salvar.

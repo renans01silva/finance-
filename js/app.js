@@ -110,11 +110,12 @@ window.doSignup = async () => {
 };
 async function afterLogin() {
   $('#nav').style.display = ''; syncState = 'syncing';
+  await checkPlanOwner();
   await pull(false); loadCouple();
   if (S.recurrences && S.recurrences.length && E.generateRecurring(S, E.today(), 12)) save();
   render();
 }
-window.doLogout = async () => { await sb.auth.signOut(); user = null; cloudVer = 0; couple = { loaded: false, shares: [], theirs: null, who: 'casal', err: null }; try { localStorage.removeItem(KEY); } catch (e) {} S = E.newState(); fixState(); closeSheet(); renderLogin(); };
+window.doLogout = async () => { await sb.auth.signOut(); user = null; planOwner = !CLOUD; cloudVer = 0; couple = { loaded: false, shares: [], theirs: null, who: 'casal', err: null }; try { localStorage.removeItem(KEY); } catch (e) {} S = E.newState(); fixState(); closeSheet(); renderLogin(); };
 async function bootCloud() {
   sb = window.supabase.createClient(CFG.url, CFG.key);
   const { data } = await sb.auth.getSession();
@@ -128,6 +129,18 @@ window.doImport = () => { try { const d = JSON.parse(val('im')); if (!d || !Arra
 
 const NAV = [['inicio', 'home', 'Início'], ['mov', 'list', 'Movimentos'], ['contas', 'receipt', 'Contas'], ['cartoes', 'card', 'Cartões'], ['orc', 'wallet', 'Orçamento']];
 function renderNav() { $('#nav').innerHTML = NAV.map(([k, i, l]) => `<button class="${tab === k ? 'on' : ''}" onclick="go('${k}')">${ic(i)}${l}</button>`).join('') + `<button onclick="openDrawer()">${ic('menu')}Menu</button>`; }
+// a planilha embutida no app (E.planTemplate) é do Renan: só a conta dele vê as opções que usam a planilha.
+// config.js guarda só a "impressão digital" (SHA-256) do e-mail dele, para o e-mail não ficar visível no site.
+let planOwner = !CLOUD;
+const isPlanOwner = () => planOwner;
+async function checkPlanOwner() {
+  planOwner = !CLOUD;
+  if (!CLOUD || !user || !CFG.planilha || !(window.crypto && crypto.subtle)) return;
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(user.email || '').trim().toLowerCase()));
+    planOwner = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('') === CFG.planilha;
+  } catch (e) { planOwner = false; }
+}
 window.go = (k) => { tab = k; closeDrawer(); render(); window.scrollTo(0, 0); };
 window.setCtx = (c) => { S.prefs.ctx = c; save(); closeSheet(); closeDrawer(); render(); };
 
@@ -413,6 +426,7 @@ function planCard(pk) {
   ${stat('Sobra do plano', brl(P.balanceCents), P.balanceCents < 0 ? 'neg' : 'pos')}${stat('Sobra com o que já aconteceu', brl(P.realBalanceCents), P.realBalanceCents < 0 ? 'neg' : '')}</div>`;
 }
 function planUpdateNote() {
+  if (!isPlanOwner()) return '';
   if (!E.planItems(S).length) return '';
   const n = E.planPreviewUpdate(S, E.planTemplate(), E.today()).changes.length; if (!n) return '';
   return `<div class="note" style="margin:0 0 14px"><b>Nova versão da planilha disponível.</b> ${n} mudança${n > 1 ? 's' : ''} em relação ao seu orçamento atual.<br><button class="link" style="padding:6px 0 0" onclick="openPlanUpdate()">Ver e atualizar</button></div>`;
@@ -428,7 +442,7 @@ function vOrc() {
   const pk1 = E.pk(month, 1), pk2 = E.pk(month, 2), pd = E.cfg(S).payDays;
   if (!E.planItems(S).length) return `${topbar()}${pageH('Orçamento', 'Decida quanto cada recebimento vai pagar.')}
   <div class="card" style="padding:20px"><h3 style="margin:0 0 8px">Seu orçamento por recebimento</h3><p class="lead" style="margin:0 0 16px">Para cada recebimento (dia ${pd[0]} e dia ${pd[1]}), liste as contas fixas, os gastos que quer limitar e o que vai guardar. O app compara com o que você realmente gasta.</p>
-  <button class="btn" onclick="importPlan()">Usar o orçamento da minha planilha</button><div style="height:10px"></div><button class="btn ghost" onclick="openPlanIncome()">Começar do zero</button></div>`;
+  ${isPlanOwner() ? `<button class="btn" onclick="importPlan()">Usar o orçamento da minha planilha</button><div style="height:10px"></div><button class="btn ghost" onclick="openPlanIncome()">Começar do zero</button>` : `<button class="btn" onclick="openPlanIncome()">Montar meu orçamento</button>`}</div>`;
   const a = E.planPeriod(S, pk1, ctx()), b = E.planPeriod(S, pk2, ctx());
   const row = (l, x, y, cls = '', tot = false) => `<tr class="${tot ? 'tot' : ''}"><td>${l}</td><td class="${cls}">${brl(x)}</td><td class="${cls}">${brl(y)}</td><td class="${cls}">${brl(x + y)}</td></tr>`;
   const warn = [a, b].filter((p) => p.balanceCents < 0).map((p) => `O orçamento do dia ${pd[E.parsePk(p.pk).slot - 1]} passa do rendimento em ${brl(-p.balanceCents)}.`);
@@ -438,10 +452,15 @@ function vOrc() {
   ${warn.length ? `<div class="note warn" style="margin:-4px 0 14px">${warn.join(' ')} Ajuste algum item para fechar a conta.</div>` : ''}
   ${planUpdateNote()}<button class="btn ghost" style="margin-bottom:14px" onclick="openGenerate()">Lançar as contas fixas deste mês</button>
   ${planCard(pk1)}${planCard(pk2)}
+  <button class="btn ghost" style="margin:6px 0 14px;color:var(--bad)" onclick="openPlanReset()">Recomeçar orçamento do zero</button>
   <details class="how"><summary>Como funciona?</summary>Cada item pertence a um recebimento. Contas fixas viram lançamentos "a pagar" quando você usa o botão acima (nunca duplicam e nada é pago sozinho). Orçamentos variáveis comparam o limite com o que você gastou no período, pelo item escolhido no lançamento, pelo nome na descrição ou pela categoria, quando ela é única. O "Cartão reservado" é o teto da fatura que vence naquele recebimento: compras no cartão contam nele e não nos orçamentos em dinheiro (a menos que você escolha o item no lançamento). Reservas e investimentos são separações de dinheiro: marque "Separei" quando fizer. Tirar um item do orçamento nunca apaga gastos.</details>`;
 }
+window.openPlanReset = () => {
+  const n = E.planItems(S).length, recs = S.recurrences.filter((r) => !r.ended && r.planItemId).length;
+  ask(`Recomeçar o orçamento do zero? Saem os <b>${n} itens</b> do orçamento, os rendimentos planejados e os limites por categoria deste mês em diante${recs ? `, e as <b>${recs} contas mensais</b> criadas pelo orçamento são encerradas (só as futuras ainda não pagas são canceladas)` : ''}.<br><br><b>Nenhum lançamento já feito é apagado</b>: entradas, despesas, cartões e contas pagas continuam.`, () => { const r = E.planReset(S); save(); toast('Orçamento zerado · ' + r.items + ' itens removidos'); render(); }, 'Recomeçar do zero');
+};
 window.togglePlanDone = (pk, id) => { E.planSetDone(S, pk, id, !S.plan.done[pk + '|' + id]); save(); render(); };
-window.importPlan = () => ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); E.planFillBudgets(S, month, 12); save(); toast('Orçamento importado e limites por categoria preenchidos'); render(); } catch (e) { toast(e.message); } }, 'Importar');
+window.importPlan = () => !isPlanOwner() ? toast('Monte o seu orçamento com seus próprios itens.') : ask('Vou preencher o orçamento com os itens e valores da sua planilha (dia 10 e dia 25). Você pode editar tudo depois. Nenhum lançamento é criado agora.', () => { try { E.planImport(S, E.planTemplate()); E.planFillBudgets(S, month, 12); save(); toast('Orçamento importado e limites por categoria preenchidos'); render(); } catch (e) { toast(e.message); } }, 'Importar');
 window.openPlanIncome = () => { const pd = E.cfg(S).payDays, pl = S.plan; sheet(`<h2>Rendimentos planejados</h2><p class="lead">Quanto você espera receber em cada dia. É a base do orçamento.</p>
   ${F('Recebimento do dia ' + pd[0], `<input id="pi-1" inputmode="decimal" value="${pl.income[0] ? moneyIn(pl.income[0]) : ''}" placeholder="0,00">`)}${F('Recebimento do dia ' + pd[1], `<input id="pi-2" inputmode="decimal" value="${pl.income[1] ? moneyIn(pl.income[1]) : ''}" placeholder="0,00">`)}
   <div style="height:22px"></div><button class="btn" onclick="savePlanIncome()">Salvar</button>`); };
@@ -521,6 +540,7 @@ function vMov() {
 let showAllBills = false;
 window.openRecFromPlan = () => {
   if (needAccount()) return;
+  if (!E.planItems(S).length && !isPlanOwner()) { toast('Monte primeiro o seu orçamento na aba Orçamento.'); return go('orc'); }
   const noPlan = !E.planItems(S).length, items = noPlan ? E.planTemplate().items.filter((i) => i.kind === 'fixed' && i.dueDay) : E.planRecurrenceCandidates(S), pd = E.cfg(S).payDays;
   sheet(`<h2>Contas da planilha</h2><p class="lead">Vou programar estas ${items.length} contas para todo mês, com o dia de vencimento de cada uma, e lançar os próximos 12 meses como "a pagar". Nada é pago automaticamente.</p>
   <div class="card" style="margin:0 0 14px">${items.slice().sort((a, b) => a.dueDay - b.dueDay).map((i) => `<div class="row" style="cursor:default"><div class="m"><b>${esc(i.name)}</b><small>Todo dia ${i.dueDay} · paga com o dia ${pd[i.slot - 1]}</small></div><div class="a">${brl(i.amountCents)}</div></div>`).join('')}</div>

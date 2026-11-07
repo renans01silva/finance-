@@ -60,4 +60,5 @@
 - **Chave estrangeira (foreign key)** — coluna que "aponta" para uma linha de outra tabela (ex.: os dados apontam para o usuário dono).
 - **ON DELETE CASCADE** — regra "efeito dominó": se o item principal for apagado, tudo o que aponta para ele é apagado junto.
 - **Cadastro público (sign up)** — permitir que qualquer pessoa crie conta sozinha. No app está **fechado**: só o Renan cria contas, pelo painel do Supabase.
+- **Hash ("impressão digital")** — código embaralhado gerado a partir de um texto (ex.: um e-mail). Serve para conferir se o texto bate, mas não dá para descobrir o texto a partir dele. O app usa o hash do e-mail do Renan para reconhecer a conta dele sem deixar o e-mail visível.
 - **`user_id` / UUID** — código único que identifica cada usuário.

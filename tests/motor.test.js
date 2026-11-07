@@ -357,3 +357,33 @@ describe('11. Quadro "Seu orçamento agora" (período atual e próximo)', () => 
     assert.equal(E.spentBetween(s, r.start, r.end), 28390);
   });
 });
+
+describe('12. Recomeçar orçamento do zero', () => {
+  test('tira itens, rendimentos e limites futuros, encerra contas mensais do orçamento e NÃO apaga lançamentos', () => {
+    const { E, s, conta } = cenario('2026-11-07');
+    E.planImport(s, E.planTemplate());
+    E.planFillBudgets(s, '2026-10', 14);
+    E.planRecurrences(s, { accountId: conta.id });
+    const futura = s.tx.find((t) => t.recurrenceId && t.dueDate >= '2026-11-07');
+    E.confirm(s, futura.id, { date: '2026-11-07' });                       // uma conta já paga
+    E.addExpense(s, { amountCents: 5000, accountId: conta.id, desc: 'Café', paid: true }); // gasto avulso
+    const qtd = s.tx.length;
+    const r = E.planReset(s, '2026-11-07');
+    assert.ok(r.items > 0 && r.recurrences > 0 && r.bills > 0);
+    assert.equal(E.planItems(s).length, 0);
+    igual(s.plan.income, [0, 0]);
+    assert.equal(s.tx.length, qtd);                                          // nenhum lançamento apagado
+    assert.equal(futura.status, 'paid');                                     // o que já foi pago continua pago
+    assert.ok(s.tx.some((t) => t.desc === 'Café' && t.status === 'paid'));
+    assert.ok(Object.keys(s.budgets).every((k) => k < '2026-11'));          // limites antigos ficam (histórico)
+    assert.ok(s.recurrences.filter((x) => x.planItemId).every((x) => x.ended));
+  });
+
+  test('depois de zerar, dá para montar um orçamento novo', () => {
+    const { E, s } = cenario();
+    E.planImport(s, E.planTemplate());
+    E.planReset(s);
+    E.planAdd(s, { slot: 1, name: 'Aluguel da Duda', kind: 'fixed', amountCents: 120000, dueDay: 15 });
+    assert.equal(E.planItems(s).length, 1);
+  });
+});

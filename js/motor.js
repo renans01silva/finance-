@@ -818,6 +818,18 @@
     return m;
   };
   // preenche limites vazios (nunca sobrescreve um limite que o usuário já definiu, a menos que opts.overwrite)
+  // recomeçar o orçamento do zero: tira todos os itens e rendimentos planejados, os limites por categoria
+  // deste mês em diante e encerra as contas mensais criadas a partir do orçamento (só as futuras ainda não pagas são canceladas).
+  // NÃO apaga nenhum lançamento já feito (entradas, despesas, cartões, contas pagas).
+  E.planReset = (s, today = E.today()) => {
+    const ids = new Set(planOf(s).items.map((i) => i.id)), ym = E.ym(today);
+    const recs = s.recurrences.filter((r) => !r.ended && r.planItemId && ids.has(r.planItemId));
+    let bills = 0; recs.forEach((r) => { bills += E.stopRecurring(s, r.id, today); });
+    let limits = 0; Object.keys(s.budgets || {}).forEach((k) => { if (k.slice(0, 7) >= ym) { delete s.budgets[k]; limits++; } });
+    const items = planOf(s).items.filter((i) => i.active !== false).length;
+    s.plan = { income: [0, 0], items: [], done: {} };
+    return { items, recurrences: recs.length, bills, limits };
+  };
   E.planFillBudgets = (s, fromYm, months = 12, opts = {}) => {
     const cat = E.planCategoryBudgets(s); let n = 0;
     for (let k = 0; k < months; k++) {

@@ -38,7 +38,7 @@ Os dados ficam no aparelho e são sincronizados com o Supabase, com login por e-
 - [`docs/GLOSSARIO.md`](docs/GLOSSARIO.md): termos técnicos explicados.
 
 ## Testes automáticos
-41 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração, lista de gastos e dias de recebimento).
+43 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração, lista de gastos e dias de recebimento).
 Para rodar, na pasta do projeto: `node --test tests/motor.test.js`
 
 ## Publicação

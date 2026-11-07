@@ -76,7 +76,7 @@ Para **todo** pedido que altere arquivos, banco de dados ou configurações, pri
 | `js/temas.js` | Paletas de cor e modo claro/escuro (`window.FCT`) |
 | `js/motor.js` | Motor financeiro: todos os cálculos (`window.FC`) |
 | `js/app.js` | Telas, login, sincronização e botões |
-| `config.js` | URL do Supabase e chave **publishable** (pública por natureza; a segurança vem do RLS — ver `docs/SUPABASE.md`) |
+| `config.js` | URL do Supabase, chave **publishable** (pública por natureza; a segurança vem do RLS — ver `docs/SUPABASE.md`) e `planilha`: "impressão digital" (SHA-256) do e-mail do Renan |
 | `manifest.webmanifest` | Dados da PWA (nome, ícones, cores) |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | Ícones |
 | `docs/` | Documentação (glossário, Supabase) |
@@ -107,11 +107,12 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - Armazenamento local (`localStorage`): `fc_v1` (dados), `fc_pref` (aparência), `fc_v1_pre2` (cópia antes da migração), `fc_dup_undo`, `fc_cards_undo` (desfazer). `sessionStorage` `fc_hide` (ocultar saldo).
 - Nuvem: tabela `app_state` (1 linha por usuário com todo o `S`). Envio ~0,7 s após salvar, com controle de **versão** (se outro aparelho salvou antes, baixa a versão mais recente). Cada alteração guarda a versão anterior em `app_state_history` (últimas 50).
 - **Contas de usuário:** o cadastro público está **fechado** no Supabase ("Allow new users to sign up" desligado). O botão "Criar minha conta" do app mostra "Signups not allowed". Contas novas são criadas pelo Renan no painel (passo a passo em `docs/SUPABASE.md`).
+- **A planilha do Renan** (`E.planTemplate`, com os itens e valores dele) só pode ser oferecida na conta dele: `isPlanOwner()` em `js/app.js` compara o SHA-256 do e-mail logado com `FC_CONFIG.planilha`. Outras contas montam o orçamento do zero e têm o botão "Recomeçar orçamento do zero" (`E.planReset`, que não apaga lançamentos).
 - Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`. **O app não envia e-mail de convite**: o convite só fica registrado no banco, e o par precisa criar conta com o mesmo e-mail e abrir a tela Casal para aceitar.
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- **Testes automáticos do motor financeiro** (41 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
+- **Testes automáticos do motor financeiro** (43 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
   - `tests/carregar-motor.js` carrega o `js/motor.js` isolado, sem navegador.
   - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
   - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.
