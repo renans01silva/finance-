@@ -9,7 +9,17 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v10 (inclui v5 a v9)
+## [Não publicado] — versão v11 (inclui v5 a v10)
+
+### Adicionado
+- **Lançamento por voz.** Na tela Início, "Por frase" virou **"Falar"**: abre a tela "Fale ou escreva" com um microfone que já começa a ouvir. Você fala (ex.: "Paguei R$ 1.200 do aluguel no Pix"), o app monta o lançamento e abre o formulário preenchido para você conferir e salvar. A fala vira texto pelo próprio iPhone (serviço de voz da Apple); o app recebe só o texto. Se o microfone não estiver disponível no app instalado, a tela sugere o 🎤 do teclado do iPhone, que tem o mesmo resultado.
+- Entende valores falados por extenso ("cento e cinquenta reais", "três mil e duzentos reais"), "3 mil reais", "R$ 2,5 mil" e número solto ("gastei 85 no mercado"). Novas palavras para Transporte: posto, abasteci, abastecimento, combustível.
+
+### Corrigido
+- **"1.200" era lido como R$ 1,20** — na frase e também nos campos de valor dos formulários. Agora o ponto de milhar é entendido (R$ 1.200,00). "1.50" continua sendo R$ 1,50.
+- 4 grupos de testes novos (total: 47). Etiqueta de versão `?v=11`.
+
+### Também nesta versão (preparados como v10)
 
 ### Corrigido
 - **A planilha do Renan aparecia para outras contas.** O orçamento da planilha dele está gravado dentro do app (Aluguel, AABB Tênis, Jiu-jítsu…), e as opções "Usar o orçamento da minha planilha", "Contas da planilha" e o aviso de "atualizar orçamento" apareciam para qualquer pessoa — por isso a Duda ficou com o orçamento do Renan (planejado R$ 3.787,92 / R$ 2.673,46). Agora essas opções **só aparecem na conta do Renan**. O app reconhece a conta pela "impressão digital" (SHA-256) do e-mail, guardada em `config.js` — o e-mail em si não fica visível no site.

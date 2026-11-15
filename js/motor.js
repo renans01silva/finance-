@@ -8,6 +8,7 @@
     if (typeof v === 'number') return Math.round(v * 100);
     let s = String(v).replace(/[^\d,.-]/g, '');
     if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); // "1.200" = mil e duzentos (ponto de milhar)
     const n = Number(s);
     return isNaN(n) ? NaN : Math.round(n * 100);
   };
@@ -319,7 +320,7 @@
 
   // ───── linguagem natural: "Hoje gastei R$ 85 no mercado via Pix"
   const METHODS = [['pix', /\bpix\b/i], ['credit_card', /cart[aã]o|cr[eé]dito/i], ['debit_card', /d[eé]bito/i], ['cash', /dinheiro|esp[eé]cie/i], ['boleto', /boleto/i], ['transfer', /transfer/i]];
-  const KEYWORDS = { 'e_Alimentação': ['mercado', 'supermercado', 'padaria', 'restaurante', 'lanche', 'ifood', 'almoço', 'jantar', 'feira'], 'e_Transporte': ['uber', 'ônibus', 'onibus', 'metrô', 'metro', 'gasolina', 'combustível', 'estacionamento', 'pedágio'], 'e_Saúde': ['farmácia', 'farmacia', 'médico', 'medico', 'consulta', 'remédio', 'remedio'], 'e_Moradia': ['aluguel', 'condomínio', 'condominio', 'luz', 'água', 'agua', 'internet', 'gás', 'gas'], 'e_Lazer': ['cinema', 'netflix', 'spotify', 'passeio', 'viagem'], 'e_Educação': ['escola', 'curso', 'inglês', 'ingles', 'faculdade', 'livro'], 'e_Família': ['bebê', 'bebe', 'fralda', 'filho', 'brinquedo'] };
+  const KEYWORDS = { 'e_Alimentação': ['mercado', 'supermercado', 'padaria', 'restaurante', 'lanche', 'ifood', 'almoço', 'jantar', 'feira'], 'e_Transporte': ['uber', 'ônibus', 'onibus', 'metrô', 'metro', 'gasolina', 'combustível', 'combustivel', 'posto', 'abasteci', 'abastecimento', 'estacionamento', 'pedágio', 'pedagio'], 'e_Saúde': ['farmácia', 'farmacia', 'médico', 'medico', 'consulta', 'remédio', 'remedio'], 'e_Moradia': ['aluguel', 'condomínio', 'condominio', 'luz', 'água', 'agua', 'internet', 'gás', 'gas'], 'e_Lazer': ['cinema', 'netflix', 'spotify', 'passeio', 'viagem'], 'e_Educação': ['escola', 'curso', 'inglês', 'ingles', 'faculdade', 'livro'], 'e_Família': ['bebê', 'bebe', 'fralda', 'filho', 'brinquedo'] };
   E.suggestCategory = (s, desc) => {
     const d = (desc || '').toLowerCase(); if (!d) return null;
     const words = d.split(/\s+/).filter((w) => w.length > 2), score = {};
@@ -328,18 +329,32 @@
     for (const [cat, ks] of Object.entries(KEYWORDS)) if (ks.some((k) => d.includes(k))) return cat;
     return null;
   };
+  // valores falados por extenso ("cento e cinquenta reais", "mil e duzentos") viram números
+  const NUMW = { zero: 0, um: 1, uma: 1, dois: 2, duas: 2, 'três': 3, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19, vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90, cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, quatrocentos: 400, quinhentos: 500, seiscentos: 600, setecentos: 700, oitocentos: 800, novecentos: 900 };
+  const wordsToNumber = (txt) => {
+    const re = new RegExp('\\b((?:(?:' + Object.keys(NUMW).join('|') + '|mil)(?:\\s+e\\s+|\\s+))*(?:' + Object.keys(NUMW).join('|') + '|mil))\\b(?=\\s*(?:reais|real|conto|pila)\\b)', 'i');
+    const m = txt.match(re); if (!m) return null;
+    let total = 0, cur = 0;
+    m[1].toLowerCase().split(/\s+/).filter((w) => w !== 'e').forEach((w) => { if (w === 'mil') { total += (cur || 1) * 1000; cur = 0; } else cur += NUMW[w] || 0; });
+    return total + cur;
+  };
   E.parseNatural = (s, text, today = E.today()) => {
     const out = { kind: 'expense', missing: [] }, t = text.trim();
     if (/\b(recebi|ganhei|entrou|caiu)\b/i.test(t)) out.kind = 'income';
-    const m = t.match(/R\$\s*([\d.]+(?:,\d{1,2})?)|(\d+(?:[.,]\d{1,2})?)\s*(?:reais|real)/i);
-    if (m) out.amountCents = E.toCents(m[1] || m[2]); else out.missing.push('valor');
+    // ordem: "R$ 1.200,50" · "85 reais" · número por extenso + "reais" · qualquer número solto ("gastei 85 no mercado")
+    const NUM = '(\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?)';
+    const mil = t.match(/(?:R\$\s*)?(\d+(?:,\d+)?)\s*mil\b/i); // "3 mil reais", "R$ 2,5 mil"
+    const m = mil ? null : (t.match(new RegExp('R\\$\\s*' + NUM, 'i')) || t.match(new RegExp(NUM + '\\s*(?:reais|real|conto|pila)\\b', 'i')));
+    const w = m || mil ? null : wordsToNumber(t), solto = m || mil || w != null ? null : t.match(new RegExp('(?:^|\\s)' + NUM + '(?=\\s|$)'));
+    if (mil) out.amountCents = Math.round(E.toCents(mil[1]) * 1000);
+    else if (m) out.amountCents = E.toCents(m[1]); else if (w != null) out.amountCents = w * 100; else if (solto) out.amountCents = E.toCents(solto[1]); else out.missing.push('valor');
     out.date = /\bontem\b/i.test(t) ? E.addDays(today, -1) : today;
     for (const [k, re] of METHODS) if (re.test(t)) { out.method = k; break; }
     if (!out.method && out.kind === 'expense') out.missing.push('forma de pagamento');
     const d = t.match(/\b(?:no|na|em|com|de|do|da)\s+([^\d,.]+?)(?:\s+(?:via|no|na|com|por)\b|$)/i);
     out.desc = d ? d[1].trim().replace(/^(o|a|os|as)\s+/i, '') : '';
     if (out.desc) out.desc = out.desc[0].toUpperCase() + out.desc.slice(1);
-    out.categoryId = out.kind === 'expense' ? E.suggestCategory(s, out.desc) : null;
+    out.categoryId = out.kind === 'expense' ? (E.suggestCategory(s, out.desc) || E.suggestCategory(s, t)) : null;
     return out;
   };
 

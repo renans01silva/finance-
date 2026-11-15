@@ -22,6 +22,7 @@
 - **Teste automático** — "lista de checagem" que o computador roda sozinho para conferir se o código continua dando os resultados certos.
 - **Node (Node.js)** — programa que roda JavaScript fora do navegador; usado aqui para rodar os testes.
 - **Cache** — "memória" do navegador que guarda arquivos já baixados para abrir mais rápido. Por isso usamos a etiqueta `?v=N`: ao mudar o número, o navegador baixa a versão nova.
+- **Reconhecimento de fala** — recurso do aparelho que transforma o que você fala em texto. No iPhone é feito pelo serviço de voz da Apple; o app só recebe o texto.
 - **Console** — painel escondido do navegador onde aparecem mensagens de erro do código.
 
 ## Git e GitHub

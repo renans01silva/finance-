@@ -387,3 +387,40 @@ describe('12. Recomeçar orçamento do zero', () => {
     assert.equal(E.planItems(s).length, 1);
   });
 });
+
+describe('13. Valores com ponto de milhar e lançamento por voz/frase', () => {
+  const E = carregarMotor('2026-11-15');
+  const s = E.newState();
+  const ler = (f) => E.parseNatural(s, f);
+
+  test('"1.200" é mil e duzentos (não R$ 1,20), em qualquer campo de valor', () => {
+    assert.equal(E.toCents('1.200'), 120000);
+    assert.equal(E.toCents('12.000,00'), 1200000);
+    assert.equal(E.toCents('1.50'), 150);     // ponto com 2 casas continua sendo decimal
+    assert.equal(E.toCents('85,90'), 8590);
+  });
+
+  test('frases com R$, "reais", "mil" e número solto', () => {
+    assert.equal(ler('Paguei R$ 1.200 do aluguel no Pix').amountCents, 120000);
+    assert.equal(ler('Recebi R$ 3.000 de salário').amountCents, 300000);
+    assert.equal(ler('Recebi 3 mil reais de salário').amountCents, 300000);
+    assert.equal(ler('Recebi R$ 2,5 mil de bônus').amountCents, 250000);
+    assert.equal(ler('Gastei 85 no mercado').amountCents, 8500);
+    assert.equal(ler('Gastei R$ 85,90 no mercado no Pix').amountCents, 8590);
+  });
+
+  test('valores falados por extenso', () => {
+    assert.equal(ler('gastei cento e cinquenta reais de gasolina').amountCents, 15000);
+    assert.equal(ler('gastei oitenta e cinco reais na padaria').amountCents, 8500);
+    assert.equal(ler('Recebi três mil e duzentos reais de salário').amountCents, 320000);
+    assert.equal(ler('Paguei mil reais do aluguel').amountCents, 100000);
+  });
+
+  test('entende tipo, data, forma de pagamento e categoria', () => {
+    const r = ler('Ontem gastei R$ 150 de gasolina no cartão');
+    assert.equal(r.kind, 'expense'); assert.equal(r.date, '2026-11-14'); assert.equal(r.method, 'credit_card'); assert.equal(r.categoryId, 'e_Transporte');
+    assert.equal(ler('Abasteci 150 reais no posto').categoryId, 'e_Transporte');
+    assert.equal(ler('Recebi 3 mil reais de salário').kind, 'income');
+    assert.equal(ler('gastei R$85,50 na padaria no débito').method, 'debit_card');
+  });
+});
