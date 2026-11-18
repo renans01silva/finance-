@@ -549,13 +549,15 @@ window.openLinker = (ym) => {
 };
 window.acceptAll = (ym) => ask(`Vincular as ${window._lk.length} contas aos recebimentos sugeridos? Você pode mudar cada uma depois.`, () => { const n = E.acceptSuggestions(S, window._lk); save(); closeSheet(); toast(n + ' contas vinculadas'); render(); }, 'Vincular todas');
 
+// uma linha de gasto realizado (usada na aba Movimentos e no detalhe da categoria em Relatórios)
+const spentRow = ({ t, date }) => {
+  const rf = t.kind === 'refund', card = t.cardId && S.cards.find((c) => c.id === t.cardId);
+  const how = rf ? 'Estorno' : card ? 'Cartão ' + esc(card.name) : 'Pago';
+  return `<div class="row" onclick="openTx('${t.id}')"><div class="sq">${rf ? ic('undo') : catIcon(t.categoryId)}</div><div class="m"><b>${esc(t.desc)}</b><small>${esc(catName(t.categoryId))} · ${how} · ${fd(date).slice(0, 5)}</small></div><div class="a ${rf ? 'pos' : ''}">${rf ? '+' : '−'}${brl(t.amountCents)}</div></div>`;
+};
 function vMov() {
   const L = E.spentList(S, month, ctx()), total = L.reduce((a, x) => a + x.cents, 0), mes = MONTHS[+month.slice(5) - 1].toLowerCase();
-  const row = ({ t, date }) => {
-    const rf = t.kind === 'refund', card = t.cardId && S.cards.find((c) => c.id === t.cardId);
-    const how = rf ? 'Estorno' : card ? 'Cartão ' + esc(card.name) : 'Pago';
-    return `<div class="row" onclick="openTx('${t.id}')"><div class="sq">${rf ? ic('undo') : catIcon(t.categoryId)}</div><div class="m"><b>${esc(t.desc)}</b><small>${esc(catName(t.categoryId))} · ${how} · ${fd(date).slice(0, 5)}</small></div><div class="a ${rf ? 'pos' : ''}">${rf ? '+' : '−'}${brl(t.amountCents)}</div></div>`;
-  };
+  const row = spentRow;
   const head = `<div class="glass sobrar" style="margin-bottom:12px"><div><div class="t">Gasto em ${mes}</div><div class="v">${partMoney(total)}</div><small>${L.length} ${L.length === 1 ? 'gasto' : 'gastos'} · compras no cartão e contas já pagas</small></div></div>`;
   return `${topbar()}${pageH('Gastos do mês', 'Só o que já foi gasto. Contas a pagar ficam na aba Contas; entradas, em Recebimentos.')}${monthPicker()}${head}<div class="card">${L.length ? L.map(row).join('') : empty('list', 'Nenhum gasto neste mês', 'Quando você pagar uma conta ou comprar no cartão, aparece aqui.')}</div>`;
 }
@@ -842,9 +844,16 @@ function vRel() {
   const rows = Object.entries(cur).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]), nw = E.netWorth(S, ctx()), mn = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   return `${topbar()}${pageH('Relatórios', 'Entenda para onde o dinheiro está indo.')}${monthPicker()}
   <div class="card pad"><b>Entradas e saídas</b><div class="lead" style="margin:2px 0 0">Últimos 6 meses</div><svg viewBox="0 0 320 120" width="100%" style="margin-top:10px">${ser.map((s, i) => { const x = i * 53 + 6; return `<rect x="${x}" y="${100 - s.income / mx * 85}" width="19" height="${Math.max(2, s.income / mx * 85)}" rx="5" fill="var(--ok)"/><rect x="${x + 21}" y="${100 - s.expense / mx * 85}" width="19" height="${Math.max(2, s.expense / mx * 85)}" rx="5" fill="var(--c1)"/><text x="${x + 20}" y="115" text-anchor="middle">${mn[+s.month.slice(5) - 1]}</text>`; }).join('')}</svg><div class="lead" style="margin-top:6px"><span class="pos">■</span> recebido &nbsp; <span style="color:var(--c1)">■</span> gasto</div></div>
-  <div class="eyebrow">Gastos por categoria · ${brl(tot)}</div><div class="card">${rows.length ? rows.map(([k, v]) => { const p = prev[k] || 0, d = p ? Math.round((v - p) / p * 100) : null; return `<div class="row" style="cursor:default"><div class="sq">${catIcon(k)}</div><div class="m"><div style="display:flex;justify-content:space-between"><b>${esc(catName(k))}</b><b>${brl(v)}</b></div><div class="bar"><i style="width:${Math.round(v / tot * 100)}%"></i></div><small>${Math.round(v / tot * 100)}% do total${d !== null ? ' · ' + (d >= 0 ? '+' : '') + d + '% vs. mês anterior' : ''}</small></div></div>`; }).join('') : empty('chart', 'Sem gastos neste mês', 'Os gráficos aparecem conforme você registra.')}</div>
+  <div class="eyebrow">Gastos por categoria · ${brl(tot)}</div><div class="card">${rows.length ? rows.map(([k, v]) => { const p = prev[k] || 0, d = p ? Math.round((v - p) / p * 100) : null; return `<div class="row" onclick="openCatDetail('${k}')"><div class="sq">${catIcon(k)}</div><div class="m"><div style="display:flex;justify-content:space-between"><b>${esc(catName(k))}</b><b>${brl(v)}</b></div><div class="bar"><i style="width:${Math.round(v / tot * 100)}%"></i></div><small>${Math.round(v / tot * 100)}% do total${d !== null ? ' · ' + (d >= 0 ? '+' : '') + d + '% vs. mês anterior' : ''}</small></div>${ic('chevR', 'chev')}</div>`; }).join('') : empty('chart', 'Sem gastos neste mês', 'Os gráficos aparecem conforme você registra.')}</div>
   <div class="eyebrow">Patrimônio</div><div class="card"><div class="stat"><span>Em contas</span><b>${brl(nw.assetsCents)}</b></div><div class="stat"><span>Faturas em aberto</span><b>−${brl(nw.liabilitiesCents)}</b></div><div class="stat total"><span>Patrimônio líquido</span><b class="${nw.netCents < 0 ? 'neg' : ''}">${brl(nw.netCents)}</b></div></div><div class="foot" style="text-align:left">Investimentos e bens entram em uma próxima fase.</div>`;
 }
+// detalhe de uma categoria: todos os gastos já lançados nela no mês escolhido (mesma regra do total de Relatórios)
+window.openCatDetail = (k) => {
+  const L = E.spentList(S, month, ctx()).filter((x) => (x.t.categoryId || 'sem') === k), total = L.reduce((a, x) => a + x.cents, 0);
+  sheet(`<h2>${esc(catName(k === 'sem' ? null : k))}</h2><p class="lead">${MONTHS[+month.slice(5) - 1]} de ${month.slice(0, 4)} · ${L.length} ${L.length === 1 ? 'gasto' : 'gastos'} · <b style="color:var(--tx)">${brl(total)}</b></p>
+  <div class="card" style="margin:0">${L.length ? L.map(spentRow).join('') : empty('list', 'Nenhum gasto', 'Não há gastos nesta categoria neste mês.')}</div>
+  <div class="foot" style="text-align:left">Compras no cartão aparecem na data da compra; contas, na data do pagamento. Toque num gasto para ver ou editar.</div>`);
+};
 
 
 // ───── casal: resumo do par (só leitura). Os lançamentos de cada um nunca saem da conta do dono.

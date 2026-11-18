@@ -9,7 +9,14 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v11 (inclui v5 a v10)
+## [Não publicado] — versão v12 (inclui v5 a v11)
+
+### Adicionado
+- **Relatórios → Gastos por categoria: tocar numa categoria mostra os gastos dela.** Cada categoria ganhou uma setinha (›); ao tocar, abre a lista de todos os gastos lançados nela no mês escolhido, com quantidade e total (o mesmo número da categoria). Compras no cartão aparecem na data da compra; contas, na data do pagamento. Tocar num gasto abre o lançamento para ver ou editar.
+- A linha de gasto é a mesma da aba Movimentos (mesmo visual nas duas telas).
+- Etiqueta de versão `?v=12`.
+
+### Também nesta versão (preparados como v11)
 
 ### Adicionado
 - **Lançamento por voz.** Na tela Início, "Por frase" virou **"Falar"**: abre a tela "Fale ou escreva" com um microfone que já começa a ouvir. Você fala (ex.: "Paguei R$ 1.200 do aluguel no Pix"), o app monta o lançamento e abre o formulário preenchido para você conferir e salvar. A fala vira texto pelo próprio iPhone (serviço de voz da Apple); o app recebe só o texto. Se o microfone não estiver disponível no app instalado, a tela sugere o 🎤 do teclado do iPhone, que tem o mesmo resultado.
