@@ -102,17 +102,18 @@ A **ordem de carregamento** no `index.html` importa: `config.js` → Supabase (C
 - Textos da interface em português, tom simples e amigável.
 
 ### B6. Dados e sincronização
-- Estado principal `S` (objeto JSON): `schema`, `profile`, `settings.payDays`, `accounts`, `cards`, `categories`, `tx` (lançamentos), `purchases` (compras no cartão), `budgets`, `recurrences`, `plan`, `invoiceFund`, `prefs`, `log`.
+- Estado principal `S` (objeto JSON): `schema`, `profile`, `settings.payDays`, `accounts`, `cards`, `categories`, `tx` (lançamentos), `purchases` (compras no cartão), `budgets`, `recurrences`, `plan`, `invoiceFund`, `goals` (caixinhas), `prefs`, `log`.
 - **Migração**: ao mudar a estrutura de `S`, atualizar `E.migrate` (e o número `schema`) para converter dados antigos sem perder nada.
 - Armazenamento local (`localStorage`): `fc_v1` (dados), `fc_pref` (aparência), `fc_v1_pre2` (cópia antes da migração), `fc_dup_undo`, `fc_cards_undo` (desfazer). `sessionStorage` `fc_hide` (ocultar saldo).
 - Nuvem: tabela `app_state` (1 linha por usuário com todo o `S`). Envio ~0,7 s após salvar, com controle de **versão** (se outro aparelho salvou antes, baixa a versão mais recente). Cada alteração guarda a versão anterior em `app_state_history` (últimas 50).
 - **Contas de usuário:** o cadastro público está **fechado** no Supabase ("Allow new users to sign up" desligado). O botão "Criar minha conta" do app mostra "Signups not allowed". Contas novas são criadas pelo Renan no painel (passo a passo em `docs/SUPABASE.md`).
 - **A planilha do Renan** (`E.planTemplate`, com os itens e valores dele) só pode ser oferecida na conta dele: `isPlanOwner()` em `js/app.js` compara o SHA-256 do e-mail logado com `FC_CONFIG.planilha`. Outras contas montam o orçamento do zero e têm o botão "Recomeçar orçamento do zero" (`E.planReset`, que não apaga lançamentos).
+- **Caixinhas** (`S.goals`, tela `vCx`, funções `E.goal*`): objetivos com depósitos/retiradas. **Só acompanham** — não mexem no saldo das contas nem criam lançamentos. Movimentos nunca são apagados (`cancelled`). `accountId`/`bank` dizem onde o dinheiro está (informativo).
 - Casal: tabelas `shares` (convites) e `summaries` (resumo que o parceiro pode ver); função `accept_share`. **O app não envia e-mail de convite**: o convite só fica registrado no banco, e o par precisa criar conta com o mesmo e-mail e abrir a tela Casal para aceitar.
 - Detalhes do banco e da segurança: **`docs/SUPABASE.md`**.
 
 ### B7. Como testar
-- **Testes automáticos do motor financeiro** (47 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
+- **Testes automáticos do motor financeiro** (53 testes): rodar `node --test tests/motor.test.js` na pasta do projeto. Não precisa instalar nada (usa o Node puro).
   - `tests/carregar-motor.js` carrega o `js/motor.js` isolado, sem navegador.
   - **Sempre** rodar os testes antes e depois de mexer no motor. Se um teste falhar, parar e explicar ao Renan.
   - Ao criar ou alterar uma regra de dinheiro, acrescentar um teste para ela.

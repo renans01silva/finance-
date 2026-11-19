@@ -9,7 +9,15 @@ Tipos de mudança: **Adicionado** (novidade) · **Alterado** (algo que já exist
 
 ---
 
-## [Não publicado] — versão v12 (inclui v5 a v11)
+## [Não publicado] — versão v13 (inclui v5 a v12)
+
+### Adicionado
+- **Caixinhas** (Menu → Caixinhas): crie caixinhas para seus objetivos, com nome, valor do objetivo, prazo (opcional) e **em qual banco o dinheiro está** (uma das suas contas ou outro banco; opcional e só informativo). Cada caixinha mostra barra e círculo de progresso, quanto falta e, com prazo, quanto guardar por mês. Depósitos e retiradas ficam num histórico; ao passar de 25%, 50%, 75% e 100% aparece uma comemoração. Dá para editar, encerrar (o histórico fica guardado) e cancelar um movimento lançado errado (ele fica riscado, nunca apagado).
+- **A caixinha só acompanha** quanto você separou: **não mexe no saldo das contas** (opção escolhida pelo Renan).
+- **Migração:** os dados ganham uma lista vazia de caixinhas (`goals`). Nada do que já existia muda.
+- 6 testes novos (total: 53). Etiqueta de versão `?v=13`.
+
+### Também nesta versão (preparados como v12)
 
 ### Adicionado
 - **Relatórios → Gastos por categoria: tocar numa categoria mostra os gastos dela.** Cada categoria ganhou uma setinha (›); ao tocar, abre a lista de todos os gastos lançados nela no mês escolhido, com quantidade e total (o mesmo número da categoria). Compras no cartão aparecem na data da compra; contas, na data do pagamento. Tocar num gasto abre o lançamento para ver ou editar.

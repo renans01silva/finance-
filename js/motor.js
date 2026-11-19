@@ -44,7 +44,7 @@
   E.newState = () => ({
     schema: 2, profile: { name: 'Renan', mode: 'dark', palette: 'azul' },
     settings: { payDays: [10, 25] }, invoiceFund: {}, purchases: [], plan: { income: [0, 0], items: [], done: {} },
-    accounts: [], cards: [], categories: defaultCategories(), tx: [], budgets: {}, recurrences: [], log: [],
+    accounts: [], cards: [], categories: defaultCategories(), tx: [], budgets: {}, recurrences: [], log: [], goals: [],
   });
   function defaultCategories() {
     const ex = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Família', 'Veículos', 'Despesas profissionais', 'Outros'];
@@ -502,12 +502,60 @@
   const stripSfx = (d) => d.replace(/ \(\d+\/\d+\)$/, '');
   const sfx = (no, n) => n > 1 ? ` (${no}/${n})` : '';
 
+  // ───── caixinhas (objetivos de poupança). Elas só ACOMPANHAM quanto você separou para cada objetivo:
+  // não mexem no saldo das contas. Depósitos e retiradas nunca são apagados (só cancelados), como os lançamentos.
+  const goalsOf = (s) => (s.goals = s.goals || []);
+  const goalOf = (s, id) => { const g = goalsOf(s).find((x) => x.id === id); if (!g) throw new Error('Caixinha não encontrada.'); return g; };
+  E.goals = (s) => goalsOf(s).filter((g) => !g.archived);
+  // onde o dinheiro está guardado: uma das suas contas (accountId) ou o nome de outro banco (bank). É só informativo.
+  E.goalAdd = (s, { name, targetCents, deadline = null, accountId = null, bank = '', today = E.today() }) => {
+    if (!name || !name.trim()) throw new Error('Dê um nome para a caixinha.');
+    needAmount(targetCents);
+    const g = { id: E.uid(), name: name.trim(), targetCents, deadline: deadline || null, accountId: accountId || null, bank: accountId ? '' : String(bank || '').trim(), createdAt: today, archived: false, moves: [], history: [] };
+    goalsOf(s).push(g); phist(g, 'criada'); return g;
+  };
+  E.goalEdit = (s, id, { name, targetCents, deadline, accountId, bank }) => {
+    const g = goalOf(s, id);
+    if (accountId !== undefined || bank !== undefined) { g.accountId = accountId || null; g.bank = g.accountId ? '' : String(bank || '').trim(); }
+    if (name !== undefined) { if (!name.trim()) throw new Error('Dê um nome para a caixinha.'); g.name = name.trim(); }
+    if (targetCents !== undefined) { needAmount(targetCents); g.targetCents = targetCents; }
+    if (deadline !== undefined) g.deadline = deadline || null;
+    phist(g, 'editada'); return g;
+  };
+  E.goalWhere = (s, g) => { const a = g.accountId && s.accounts.find((x) => x.id === g.accountId); return a ? a.name : (g.bank || ''); };
+  E.goalSaved = (g) => g.moves.filter((m) => !m.cancelled).reduce((a, m) => a + (m.kind === 'ret' ? -m.cents : m.cents), 0);
+  E.goalMove = (s, id, { cents, kind = 'dep', date, note = '' }) => {
+    const g = goalOf(s, id); needAmount(cents);
+    if (kind === 'ret' && cents > E.goalSaved(g)) throw new Error('O valor é maior do que o guardado nesta caixinha.');
+    const before = E.goalInfo(g).pct, m = { id: E.uid(), kind: kind === 'ret' ? 'ret' : 'dep', cents, date: date || E.today(), note: String(note || '').trim() };
+    g.moves.push(m); phist(g, (m.kind === 'ret' ? 'retirada ' : 'depósito ') + E.brl(cents));
+    const after = E.goalInfo(g).pct, mark = [100, 75, 50, 25].find((p) => before < p && after >= p) || null;
+    return { goal: g, move: m, milestone: mark };
+  };
+  E.goalCancelMove = (s, id, moveId) => {
+    const g = goalOf(s, id), m = g.moves.find((x) => x.id === moveId); if (!m) throw new Error('Movimento não encontrado.');
+    if (m.kind === 'dep' && E.goalSaved(g) - m.cents < 0) throw new Error('Não dá para cancelar: o guardado ficaria negativo. Cancele antes a retirada.');
+    m.cancelled = true; phist(g, 'movimento cancelado'); return g;
+  };
+  E.goalArchive = (s, id) => { const g = goalOf(s, id); g.archived = true; phist(g, 'encerrada'); return g; };
+  // progresso: guardado, %, quanto falta e, se houver prazo, quanto guardar por mês para chegar lá
+  E.goalInfo = (g, today = E.today()) => {
+    const saved = E.goalSaved(g), left = Math.max(g.targetCents - saved, 0), pct = g.targetCents ? Math.floor(saved * 100 / g.targetCents) : 0;
+    let months = null, perMonth = null, late = false;
+    if (g.deadline && left > 0) {
+      late = g.deadline < today;
+      months = Math.max(1, (+g.deadline.slice(0, 4) - +today.slice(0, 4)) * 12 + (+g.deadline.slice(5, 7) - +today.slice(5, 7)) + (+g.deadline.slice(8) >= +today.slice(8) ? 0 : -1) + 1);
+      perMonth = Math.ceil(left / months);
+    }
+    return { saved, left, pct, done: saved >= g.targetCents, months, perMonth, late };
+  };
   E.migrate = (s) => {
     let ch = false;
     if (!s.settings) { s.settings = { payDays: DEFAULT_PAYDAYS.slice() }; ch = true; }
     if (!s.invoiceFund) { s.invoiceFund = {}; ch = true; }
     if (!s.purchases) { s.purchases = []; ch = true; }
     if (!s.plan) { s.plan = { income: [0, 0], items: [], done: {} }; ch = true; }
+    if (!s.goals) { s.goals = []; ch = true; }   // caixinhas (objetivos)
     const groups = {};
     s.tx.forEach((t) => {
       if (t.kind !== 'expense' || !t.cardId || t.purchaseId) return;

@@ -13,6 +13,7 @@ Funciona no navegador e pode ser **instalado na tela inicial** (PWA).
 - **Orçamento e Planejamento:** quanto pode gastar por categoria e por período de recebimento (dias 10 e 25, configuráveis).
 - **Recebimentos:** cada despesa ligada ao salário que vai pagá-la.
 - **Relatórios:** gastos por categoria e evolução mês a mês.
+- **Caixinhas:** objetivos de poupança com progresso a cada depósito e o banco onde o dinheiro está.
 - **Casal:** compartilha um resumo das finanças com o parceiro(a).
 - **Visões:** Pessoal, Profissional ou Consolidado.
 - **Aparência:** 6 paletas de cor, modo claro, escuro ou automático.
@@ -38,7 +39,7 @@ Os dados ficam no aparelho e são sincronizados com o Supabase, com login por e-
 - [`docs/GLOSSARIO.md`](docs/GLOSSARIO.md): termos técnicos explicados.
 
 ## Testes automáticos
-47 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração, lista de gastos e dias de recebimento).
+53 testes conferem os cálculos de dinheiro (centavos, parcelas, faturas, saldos, recorrências, migração, lista de gastos e dias de recebimento).
 Para rodar, na pasta do projeto: `node --test tests/motor.test.js`
 
 ## Publicação

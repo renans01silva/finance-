@@ -424,3 +424,65 @@ describe('13. Valores com ponto de milhar e lançamento por voz/frase', () => {
     assert.equal(ler('gastei R$85,50 na padaria no débito').method, 'debit_card');
   });
 });
+
+describe('14. Caixinhas (objetivos)', () => {
+  test('criar, depositar e acompanhar o progresso', () => {
+    const { E, s, conta } = cenario('2026-11-19');
+    const g = E.goalAdd(s, { name: 'Viagem', targetCents: 800000, deadline: '2027-06-30', accountId: conta.id });
+    assert.equal(E.goalWhere(s, g), 'Nubank');
+    E.goalMove(s, g.id, { cents: 250000, date: '2026-11-10' });
+    const f = E.goalInfo(g, '2026-11-19');
+    assert.equal(f.saved, 250000); assert.equal(f.pct, 31); assert.equal(f.left, 550000);
+    assert.equal(f.months, 8); assert.equal(f.perMonth, 68750);   // nov/26 a jun/27
+  });
+
+  test('a caixinha NÃO mexe no saldo das contas', () => {
+    const { E, s, conta } = cenario();
+    const g = E.goalAdd(s, { name: 'Reserva', targetCents: 100000 });
+    E.goalMove(s, g.id, { cents: 50000 });
+    assert.equal(E.accountBalance(s, conta), 100000);
+    assert.equal(s.tx.length, 0);
+  });
+
+  test('marcos de 25/50/75/100% e objetivo alcançado', () => {
+    const { E, s } = cenario();
+    const g = E.goalAdd(s, { name: 'Presente', targetCents: 40000 });
+    assert.equal(E.goalMove(s, g.id, { cents: 10000 }).milestone, 25);
+    assert.equal(E.goalMove(s, g.id, { cents: 5000 }).milestone, null);
+    assert.equal(E.goalMove(s, g.id, { cents: 25000 }).milestone, 100);
+    assert.equal(E.goalInfo(g).done, true);
+  });
+
+  test('retirada não pode passar do guardado; cancelar não apaga', () => {
+    const { E, s } = cenario();
+    const g = E.goalAdd(s, { name: 'Carro', targetCents: 3000000, bank: 'Inter' });
+    assert.equal(E.goalWhere(s, g), 'Inter');
+    const { move } = E.goalMove(s, g.id, { cents: 20000 });
+    assert.throws(() => E.goalMove(s, g.id, { cents: 20001, kind: 'ret' }));
+    E.goalMove(s, g.id, { cents: 5000, kind: 'ret' });
+    assert.equal(E.goalSaved(g), 15000);
+    assert.throws(() => E.goalCancelMove(s, g.id, move.id));   // ficaria negativo (já houve retirada)
+    const ret = g.moves.find((m) => m.kind === 'ret');
+    E.goalCancelMove(s, g.id, ret.id);                          // cancela a retirada primeiro
+    E.goalCancelMove(s, g.id, move.id);                         // agora pode cancelar o depósito
+    assert.equal(g.moves.length, 2);                            // os dois continuam no histórico
+    assert.equal(E.goalSaved(g), 0);
+  });
+
+  test('não aceita caixinha sem nome ou sem objetivo; encerrar tira da lista', () => {
+    const { E, s } = cenario();
+    assert.throws(() => E.goalAdd(s, { name: ' ', targetCents: 1000 }));
+    assert.throws(() => E.goalAdd(s, { name: 'X', targetCents: 0 }));
+    const g = E.goalAdd(s, { name: 'X', targetCents: 1000 });
+    E.goalArchive(s, g.id);
+    assert.equal(E.goals(s).length, 0);
+    assert.equal(s.goals.length, 1);                 // guardada, só encerrada
+  });
+
+  test('dados antigos ganham a gaveta vazia de caixinhas na migração', () => {
+    const { E, s } = cenario();
+    delete s.goals;
+    assert.equal(E.migrate(s), true);
+    igual(s.goals, []);
+  });
+});
